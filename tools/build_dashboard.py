@@ -32,12 +32,12 @@ def build_data(conn, cfg):
         best = conn.execute(
             """SELECT * FROM observations
                WHERE origin=? AND destination=? AND cabin=?
-                 AND source != 'travelpayouts' AND observed_at=?
+                 AND observed_at=?
                ORDER BY price_eur ASC LIMIT 1""", (*key, last_day)).fetchone()
         daily = conn.execute(
             """SELECT observed_at d, MIN(price_eur) p FROM observations
                WHERE origin=? AND destination=? AND cabin=?
-                 AND source != 'travelpayouts' AND observed_at >= ?
+                 AND observed_at >= ?
                GROUP BY observed_at ORDER BY observed_at""",
             (*key, window_start)).fetchall()
         history = [r["p"] for r in daily if r["d"] != last_day]
@@ -49,7 +49,7 @@ def build_data(conn, cfg):
             """SELECT depart_date, return_date, MIN(price_eur) p,
                       airline FROM observations
                WHERE origin=? AND destination=? AND cabin=?
-                 AND source != 'travelpayouts' AND observed_at=?
+                 AND observed_at=?
                GROUP BY depart_date, return_date""", (*key, last_day)).fetchall()
         matrix = {
             "departs": sorted({c["depart_date"] for c in cells}),
@@ -68,7 +68,7 @@ def build_data(conn, cfg):
         })
         series.append({
             "label": w["name"], "short": SHORT.get((w["destination"], w["cabin"]), ""),
-            "cabin": w["cabin"], "color_slot": len(series) % 3,
+            "cabin": w["cabin"], "color_slot": len(series) % 4,
             "points": [{"date": r["d"], "price": r["p"]} for r in daily],
         })
 

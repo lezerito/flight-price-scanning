@@ -33,13 +33,12 @@ def detect(conn, cfg, today):
     deals = []
     routes = conn.execute(
         """SELECT DISTINCT origin, destination, cabin FROM observations
-           WHERE source != 'travelpayouts'""").fetchall()
+           """).fetchall()
     for r in routes:
         # Daily best price for this route+cabin over the window (excl. today).
         history = [row["p"] for row in conn.execute(
             """SELECT observed_at, MIN(price_eur) p FROM observations
                WHERE origin=? AND destination=? AND cabin=?
-                 AND source != 'travelpayouts'
                  AND observed_at >= ? AND observed_at < ?
                GROUP BY observed_at ORDER BY observed_at""",
             (r["origin"], r["destination"], r["cabin"], window_start, today))]
@@ -48,7 +47,7 @@ def detect(conn, cfg, today):
         best_today = conn.execute(
             """SELECT * FROM observations
                WHERE origin=? AND destination=? AND cabin=?
-                 AND source != 'travelpayouts' AND observed_at=?
+                 AND observed_at=?
                ORDER BY price_eur ASC LIMIT 1""",
             (r["origin"], r["destination"], r["cabin"], today)).fetchone()
         if not best_today:

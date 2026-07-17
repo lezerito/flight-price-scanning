@@ -24,12 +24,12 @@ Runs daily on GitHub Actions, accumulates its own price history (the
 - **Data**: `data/prices.sqlite` is the system's memory — never delete it
   once real collection has started. `docs/index.html` is generated output;
   edit `tools/dashboard_template.html` instead.
+- **Data source**: Travelpayouts/Aviasales v3 `prices_for_dates` (cached
+  prices, month-granularity queries, `trip_class` for business). Amadeus
+  Self-Service is DEAD (decommissioned 2026-07-17) — do not reintroduce it.
 - **Secrets** live only in `.env` (local) / GitHub Actions Secrets:
-  `AMADEUS_CLIENT_ID`, `AMADEUS_CLIENT_SECRET`, `TRAVELPAYOUTS_TOKEN`,
-  `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `MAIL_TO`.
-- **Quota guardrail**: Amadeus free tier ≈ 2,000 calls/month; current grids
-  ≈ 48 calls/day. Re-do the math in `workflows/flight_scan.md` before
-  widening any grid in `config.json`.
+  `TRAVELPAYOUTS_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `MAIL_TO`.
+- **Quota**: 4 API calls/day (one per watch) — adding watches is cheap.
 - **Testing without keys**: `python tools/run_daily.py --mock` (generates
   30 days of fake data on an empty DB). Delete `data/prices.sqlite`
   afterwards so mock data never mixes with real observations.

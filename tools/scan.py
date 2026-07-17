@@ -1,5 +1,6 @@
-"""Daily scan: query Amadeus over the configured date grids + Travelpayouts
-month caches, and record every price observation in SQLite.
+"""Daily scan: query the Travelpayouts/Aviasales v3 API for each watched
+route+cabin over whole departure/return months, and record every price
+observation in SQLite.
 
 MOCK_SCAN=1 (or --mock) generates plausible data with no API calls, including
 a 30-day backfill on an empty DB so the full pipeline can be tested.
@@ -42,66 +43,37 @@ def google_flights_link(origin, destination, depart, ret, cabin):
 
 # ---------------------------------------------------------------- real scan
 
-def scan_amadeus(conn, cfg, today):
-    import amadeus_client
-    throttle = cfg.get("amadeus_throttle_seconds", 0.6)
-    n = 0
-    for watch in cfg["watches"]:
-        for depart in date_grid(watch["depart_window"]):
-            for ret in date_grid(watch["return_window"]):
-                try:
-                    offer = amadeus_client.search_cheapest(
-                        watch["origin"], watch["destination"], depart, ret,
-                        cabin=watch["cabin"], currency=cfg["currency"])
-                except Exception as e:  # keep scanning other combos
-                    print(f"  amadeus error {watch['name']} {depart}/{ret}: {e}")
-                    time.sleep(throttle)
-                    continue
-                if offer:
-                    db.insert_observation(conn, {
-                        "observed_at": today, "source": "amadeus",
-                        "origin": watch["origin"], "destination": watch["destination"],
-                        "origin_airport": offer["origin_airport"],
-                        "destination_airport": offer["destination_airport"],
-                        "depart_date": depart, "return_date": ret,
-                        "cabin": watch["cabin"], "price_eur": offer["price_eur"],
-                        "airline": offer["airline"],
-                        "deep_link": google_flights_link(
-                            watch["origin"], watch["destination"], depart, ret,
-                            watch["cabin"]),
-                    })
-                    n += 1
-                time.sleep(throttle)
-    return n
-
-
 def scan_travelpayouts(conn, cfg, today):
+    """One month-pair query per watch: every cached ticket found in the last
+    ~48h for depart-month x return-month becomes an observation."""
     import travelpayouts_client
     n = 0
-    routes = {(w["origin"], w["destination"]) for w in cfg["watches"]}
-    for origin, destination in sorted(routes):
-        for month in cfg["travelpayouts_months"]:
-            try:
-                rows = travelpayouts_client.month_matrix(
-                    origin, destination, month, currency=cfg["currency"])
-            except Exception as e:
-                print(f"  travelpayouts error {origin}-{destination} {month}: {e}")
+    for watch in cfg["watches"]:
+        try:
+            rows = travelpayouts_client.prices_for_dates(
+                watch["origin"], watch["destination"],
+                watch["depart_month"], watch["return_month"],
+                cabin=watch["cabin"], currency=cfg["currency"])
+        except Exception as e:  # keep scanning other watches
+            print(f"  travelpayouts error {watch['name']}: {e}")
+            continue
+        for r in rows:
+            if not r["depart_date"]:
                 continue
-            for r in rows:
-                if not r["depart_date"]:
-                    continue
-                db.insert_observation(conn, {
-                    "observed_at": today, "source": "travelpayouts",
-                    "origin": origin, "destination": destination,
-                    "origin_airport": None, "destination_airport": None,
-                    "depart_date": r["depart_date"], "return_date": r["return_date"],
-                    "cabin": "ECONOMY", "price_eur": r["price_eur"],
-                    "airline": r["airline"],
-                    "deep_link": google_flights_link(
-                        origin, destination, r["depart_date"],
-                        r["return_date"] or "", "ECONOMY"),
-                })
-                n += 1
+            db.insert_observation(conn, {
+                "observed_at": today, "source": "travelpayouts",
+                "origin": watch["origin"], "destination": watch["destination"],
+                "origin_airport": r["origin_airport"],
+                "destination_airport": r["destination_airport"],
+                "depart_date": r["depart_date"], "return_date": r["return_date"],
+                "cabin": watch["cabin"], "price_eur": r["price_eur"],
+                "airline": r["airline"],
+                "deep_link": r["link"] or google_flights_link(
+                    watch["origin"], watch["destination"], r["depart_date"],
+                    r["return_date"], watch["cabin"]),
+            })
+            n += 1
+        time.sleep(0.3)
     return n
 
 
@@ -131,8 +103,8 @@ def scan_mock(conn, cfg, today):
     for day in days:
         day_s = day.isoformat()
         for watch in cfg["watches"]:
-            for depart in date_grid(watch["depart_window"]):
-                for ret in date_grid(watch["return_window"]):
+            for depart in date_grid(watch["mock_depart_window"]):
+                for ret in date_grid(watch["mock_return_window"]):
                     db.insert_observation(conn, {
                         "observed_at": day_s, "source": "mock",
                         "origin": watch["origin"], "destination": watch["destination"],
@@ -160,13 +132,8 @@ def main():
             n = scan_mock(conn, cfg, today)
             print(f"mock scan: {n} observations")
         else:
-            n = scan_amadeus(conn, cfg, today)
-            print(f"amadeus: {n} observations")
-            if os.environ.get("TRAVELPAYOUTS_TOKEN"):
-                n2 = scan_travelpayouts(conn, cfg, today)
-                print(f"travelpayouts: {n2} observations")
-            else:
-                print("travelpayouts: skipped (no TRAVELPAYOUTS_TOKEN)")
+            n = scan_travelpayouts(conn, cfg, today)
+            print(f"travelpayouts: {n} observations")
     conn.close()
 
 

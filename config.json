@@ -6,33 +6,47 @@
       "origin": "NYC",
       "destination": "TYO",
       "cabin": "ECONOMY",
-      "depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 3 },
-      "return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 7 }
+      "depart_month": "2026-09",
+      "return_month": "2027-03",
+      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 3 },
+      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 7 }
     },
     {
       "name": "NYC -> Osaka (economy)",
       "origin": "NYC",
       "destination": "OSA",
       "cabin": "ECONOMY",
-      "depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
-      "return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
+      "depart_month": "2026-09",
+      "return_month": "2027-03",
+      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
+      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
     },
     {
       "name": "NYC -> Tokyo (business)",
       "origin": "NYC",
       "destination": "TYO",
       "cabin": "BUSINESS",
-      "depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
-      "return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
+      "depart_month": "2026-09",
+      "return_month": "2027-03",
+      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
+      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
+    },
+    {
+      "name": "NYC -> Osaka (business)",
+      "origin": "NYC",
+      "destination": "OSA",
+      "cabin": "BUSINESS",
+      "depart_month": "2026-09",
+      "return_month": "2027-03",
+      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
+      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
     }
   ],
-  "travelpayouts_months": ["2026-09-01", "2027-03-01"],
   "deal_rules": {
     "min_history_days": 5,
     "history_window_days": 30,
     "percentile_trigger": 15,
     "economy_drop_pct": 25,
     "business_drop_pct": 30
-  },
-  "amadeus_throttle_seconds": 0.6
+  }
 }

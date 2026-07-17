@@ -1,31 +1,42 @@
-"""Travelpayouts (Aviasales) Data API client — free cached prices.
+"""Travelpayouts (Aviasales) Data API client — free, token-based.
 
-Caveat: cached prices reflect typical trip durations searched by other users,
-not a 6-month stay. Useful as a broad signal for cheap departure days and
-overall price level, not as a bookable quote for our exact trip.
+Primary source since Amadeus Self-Service was decommissioned (2026-07-17).
+Prices are cached from real Aviasales user searches (last ~48h): great for
+trend tracking and deal detection, but re-verify before booking.
+
+Docs: https://support.travelpayouts.com/hc/en-us/articles/203956163
 """
 import os
 
 import requests
 
 API = "https://api.travelpayouts.com"
+TRIP_CLASS = {"ECONOMY": 0, "BUSINESS": 1}
 
 
-def month_matrix(origin, destination, month, currency="EUR"):
-    """Cheapest cached price per departure day for one month.
+def prices_for_dates(origin, destination, departure_at, return_at,
+                     cabin="ECONOMY", currency="EUR", limit=100):
+    """Cheapest cached round-trip tickets for a date or a whole month.
 
-    month: 'YYYY-MM-01'. Returns list of dicts:
-    {depart_date, return_date, price_eur, airline(None), ...}
+    departure_at / return_at accept 'YYYY-MM-DD' or 'YYYY-MM' (whole month).
+    Returns a list of dicts:
+    {depart_date, return_date, price_eur, airline, origin_airport,
+     destination_airport, transfers, link}
     """
     resp = requests.get(
-        f"{API}/v2/prices/month-matrix",
+        f"{API}/aviasales/v3/prices_for_dates",
         headers={"X-Access-Token": os.environ["TRAVELPAYOUTS_TOKEN"]},
         params={
-            "currency": currency.lower(),
             "origin": origin,
             "destination": destination,
-            "month": month,
-            "show_to_affiliates": "false",
+            "departure_at": departure_at,
+            "return_at": return_at,
+            "trip_class": TRIP_CLASS.get(cabin, 0),
+            "currency": currency.lower(),
+            "one_way": "false",
+            "unique": "false",
+            "sorting": "price",
+            "limit": limit,
         },
         timeout=60,
     )
@@ -33,10 +44,15 @@ def month_matrix(origin, destination, month, currency="EUR"):
     rows = resp.json().get("data", [])
     out = []
     for r in rows:
+        link = r.get("link")
         out.append({
-            "depart_date": r.get("depart_date"),
-            "return_date": r.get("return_date"),
-            "price_eur": float(r.get("value")),
-            "airline": r.get("gate"),
+            "depart_date": (r.get("departure_at") or "")[:10],
+            "return_date": (r.get("return_at") or "")[:10],
+            "price_eur": float(r["price"]),
+            "airline": r.get("airline"),
+            "origin_airport": r.get("origin_airport"),
+            "destination_airport": r.get("destination_airport"),
+            "transfers": r.get("transfers"),
+            "link": f"https://www.aviasales.com{link}" if link else None,
         })
     return out

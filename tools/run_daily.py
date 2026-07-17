@@ -19,8 +19,8 @@ def main():
     cfg = scan.load_config()
     today = dt.date.today().isoformat()
     mock = os.environ.get("MOCK_SCAN") == "1" or "--mock" in sys.argv
-    if not mock and not os.environ.get("AMADEUS_CLIENT_ID"):
-        print("AMADEUS_CLIENT_ID not set — add the Amadeus secrets "
+    if not mock and not os.environ.get("TRAVELPAYOUTS_TOKEN"):
+        print("TRAVELPAYOUTS_TOKEN not set — add the Travelpayouts secret "
               "(see README) or run with --mock. Nothing scanned.")
         return
 
@@ -29,11 +29,7 @@ def main():
         if mock:
             print(f"[1/4] mock scan: {scan.scan_mock(conn, cfg, today)} observations")
         else:
-            print(f"[1/4] amadeus scan: {scan.scan_amadeus(conn, cfg, today)} observations")
-            if os.environ.get("TRAVELPAYOUTS_TOKEN"):
-                print(f"      travelpayouts: {scan.scan_travelpayouts(conn, cfg, today)} observations")
-            else:
-                print("      travelpayouts: skipped (no token)")
+            print(f"[1/4] travelpayouts scan: {scan.scan_travelpayouts(conn, cfg, today)} observations")
 
     with conn:
         deals = detect_deals.detect(conn, cfg, today)

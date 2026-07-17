@@ -10,7 +10,7 @@
     --page: #f9f9f7; --surface-1: #fcfcfb;
     --text-primary: #0b0b0b; --text-secondary: #52514e; --muted: #898781;
     --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
-    --series-1: #2a78d6; --series-2: #008300; --series-3: #e87ba4;
+    --series-1: #2a78d6; --series-2: #008300; --series-3: #e87ba4; --series-4: #eda100;
     --delta-good: #006300; --delta-bad: #d03b3b;
     --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-300:#6da7ec; --seq-400:#3987e5;
     --seq-500:#256abf; --seq-600:#184f95; --seq-700:#0d366b;
@@ -21,7 +21,7 @@
       --page: #0d0d0d; --surface-1: #1a1a19;
       --text-primary: #ffffff; --text-secondary: #c3c2b7; --muted: #898781;
       --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
-      --series-1: #3987e5; --series-2: #008300; --series-3: #d55181;
+      --series-1: #3987e5; --series-2: #008300; --series-3: #d55181; --series-4: #c98500;
       --delta-good: #0ca30c; --delta-bad: #d03b3b;
     }
   }
@@ -30,7 +30,7 @@
     --page: #0d0d0d; --surface-1: #1a1a19;
     --text-primary: #ffffff; --text-secondary: #c3c2b7; --muted: #898781;
     --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
-    --series-1: #3987e5; --series-2: #008300; --series-3: #d55181;
+    --series-1: #3987e5; --series-2: #008300; --series-3: #d55181; --series-4: #c98500;
     --delta-good: #0ca30c; --delta-bad: #d03b3b;
   }
   * { box-sizing: border-box; }
@@ -112,8 +112,9 @@
 
   <div class="card">
     <h2>Daily best price</h2>
-    <p class="note">Cheapest offer found each scan day across the watched date grids
-      (depart mid-Sep 2026 · return Mar 2027). Prices in EUR.
+    <p class="note">Cheapest cached fare found each scan day (departure any day in
+      Sep 2026 · return any day in Mar 2027). Prices in EUR, source Aviasales —
+      re-verify before booking.
       Year-over-year overlay (Y-1, Y-2, Y-3) appears automatically once the
       history spans previous years.</p>
     <div id="panel-eco">
@@ -137,7 +138,8 @@
 
   <div class="card">
     <h2>Date grid — cheapest by departure × return</h2>
-    <p class="note">Latest scan. Lighter = cheaper. The outlined cell is the best combination.</p>
+    <p class="note">Latest scan. Lighter = cheaper. The outlined cell is the best
+      combination. Empty cells = no cached fare for that date pair yet.</p>
     <div class="tabs" id="matrix-tabs"></div>
     <div class="chartbox">
       <div id="matrix-holder" style="overflow-x:auto"></div>
@@ -171,10 +173,10 @@
 </div>
 
 <script>
-const DATA = {"generated_at": "2026-07-18", "n_observations": 0, "first_observation": "\u2014", "watches": [{"name": "NYC -> Tokyo (economy)", "origin": "NYC", "destination": "TYO", "cabin": "ECONOMY", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Osaka (economy)", "origin": "NYC", "destination": "OSA", "cabin": "ECONOMY", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Tokyo (business)", "origin": "NYC", "destination": "TYO", "cabin": "BUSINESS", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}], "series": [{"label": "NYC -> Tokyo (economy)", "short": "TYO eco", "cabin": "ECONOMY", "color_slot": 0, "points": []}, {"label": "NYC -> Osaka (economy)", "short": "OSA eco", "cabin": "ECONOMY", "color_slot": 1, "points": []}, {"label": "NYC -> Tokyo (business)", "short": "TYO biz", "cabin": "BUSINESS", "color_slot": 2, "points": []}], "deals": []};
+const DATA = {"generated_at": "2026-07-18", "n_observations": 0, "first_observation": "\u2014", "watches": [{"name": "NYC -> Tokyo (economy)", "origin": "NYC", "destination": "TYO", "cabin": "ECONOMY", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Osaka (economy)", "origin": "NYC", "destination": "OSA", "cabin": "ECONOMY", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Tokyo (business)", "origin": "NYC", "destination": "TYO", "cabin": "BUSINESS", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Osaka (business)", "origin": "NYC", "destination": "OSA", "cabin": "BUSINESS", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}], "series": [{"label": "NYC -> Tokyo (economy)", "short": "TYO eco", "cabin": "ECONOMY", "color_slot": 0, "points": []}, {"label": "NYC -> Osaka (economy)", "short": "OSA eco", "cabin": "ECONOMY", "color_slot": 1, "points": []}, {"label": "NYC -> Tokyo (business)", "short": "TYO biz", "cabin": "BUSINESS", "color_slot": 2, "points": []}, {"label": "NYC -> Osaka (business)", "short": "OSA biz", "cabin": "BUSINESS", "color_slot": 3, "points": []}], "deals": []};
 
 const fmtEur = v => "€" + Math.round(v).toLocaleString("en-US");
-const SERIES_VARS = ["--series-1", "--series-2", "--series-3"];
+const SERIES_VARS = ["--series-1", "--series-2", "--series-3", "--series-4"];
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
 document.getElementById("generated").textContent =
@@ -198,7 +200,7 @@ document.getElementById("generated").textContent =
       delta = "collecting baseline…";
     }
     el.innerHTML = `
-      <div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 3]})"></span>${w.name}</div>
+      <div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div>
       <div class="value">${fmtEur(w.best.price)}</div>
       <div class="delta">${delta}</div>
       <div class="dates">${w.best.depart} → ${w.best.ret}${w.best.airline ? " · " + w.best.airline : ""}</div>

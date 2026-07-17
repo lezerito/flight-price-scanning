@@ -5,17 +5,18 @@ depart mid-September 2026, return March 2027. Scans daily on GitHub Actions,
 records every price in SQLite, emails deal alerts in EUR with booking links
 (economy + big business-class drops), and publishes an HTML dashboard.
 
+Data source: **Travelpayouts/Aviasales Data API** (free; cached prices from
+real searches). Amadeus Self-Service was decommissioned on 2026-07-17 and is
+no longer an option.
+
 ## Setup (one time)
 
-1. **Amadeus** (free): create an app at https://developers.amadeus.com →
-   API Key + Secret.
-2. **Travelpayouts** (free, optional): https://www.travelpayouts.com →
-   API token.
-3. **Gmail app password**: https://myaccount.google.com/apppasswords.
-4. Add GitHub repo **Secrets** (Settings → Secrets and variables → Actions):
-   `AMADEUS_CLIENT_ID`, `AMADEUS_CLIENT_SECRET`, `TRAVELPAYOUTS_TOKEN`,
-   `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `MAIL_TO`.
-5. Enable **GitHub Pages**: Settings → Pages → Deploy from branch →
+1. **Travelpayouts** (free): register at https://www.travelpayouts.com →
+   API token (profile → API).
+2. **Gmail app password**: https://myaccount.google.com/apppasswords.
+3. Add GitHub repo **Secrets** (Settings → Secrets and variables → Actions):
+   `TRAVELPAYOUTS_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `MAIL_TO`.
+4. Enable **GitHub Pages**: Settings → Pages → Deploy from branch →
    `main` / `docs/`. The dashboard then lives at
    `https://<user>.github.io/flight-price-scanning/`.
 
