@@ -59,6 +59,9 @@ def scan_travelpayouts(conn, cfg, today):
         for r in rows:
             if not r["depart_date"]:
                 continue
+            # API only takes whole months; enforce day-level window here.
+            if watch.get("depart_from") and r["depart_date"] < watch["depart_from"]:
+                continue
             db.insert_observation(conn, {
                 "observed_at": today, "source": "travelpayouts",
                 "origin": watch["origin"], "destination": watch["destination"],

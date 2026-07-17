@@ -3,6 +3,15 @@
 One entry per date, newest first. Append an entry for every session that
 changes code, config, data handling, or project status.
 
+## 2026-07-18 (night, 2) — outbound window narrowed to Sep 21–30
+
+- User decision: departure must be **after Sep 20**. Added `depart_from:
+  2026-09-21` to the outbound watches; scan filters day-level (the API only
+  accepts whole months). Deleted the 10 already-collected out-of-scope
+  fares (incl. the €371 Sep 15) so baselines reflect the real window.
+- In-window cache is thinner: cheapest NYC→TYO after Sep 20 is currently
+  €534 (Sep 23). Mock windows, dashboard texts, and search default updated.
+
 ## 2026-07-18 (night) — repo public, dashboard hosted on GitHub Pages
 
 - User approved making this repo (and only this repo) public — repo
