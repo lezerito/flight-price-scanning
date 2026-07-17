@@ -19,6 +19,10 @@ def main():
     cfg = scan.load_config()
     today = dt.date.today().isoformat()
     mock = os.environ.get("MOCK_SCAN") == "1" or "--mock" in sys.argv
+    if not mock and not os.environ.get("AMADEUS_CLIENT_ID"):
+        print("AMADEUS_CLIENT_ID not set — add the Amadeus secrets "
+              "(see README) or run with --mock. Nothing scanned.")
+        return
 
     conn = db.connect()
     with conn:
