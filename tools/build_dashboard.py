@@ -13,8 +13,8 @@ TEMPLATE = os.path.join(os.path.dirname(__file__), "dashboard_template.html")
 OUT = os.path.join(ROOT, "docs", "index.html")
 CONFIG_PATH = os.path.join(ROOT, "config.json")
 
-SHORT = {("TYO", "ECONOMY"): "TYO eco", ("OSA", "ECONOMY"): "OSA eco",
-         ("TYO", "BUSINESS"): "TYO biz", ("OSA", "BUSINESS"): "OSA biz"}
+SHORT = {("NYC", "TYO"): "→ TYO", ("NYC", "OSA"): "→ OSA",
+         ("TYO", "NYC"): "TYO →", ("OSA", "NYC"): "OSA →"}
 
 
 def build_data(conn, cfg):
@@ -28,7 +28,6 @@ def build_data(conn, cfg):
     watches, series = [], []
     for w in cfg["watches"]:
         key = (w["origin"], w["destination"], w["cabin"])
-        short = SHORT.get((w["destination"], w["cabin"]), w["destination"])
         best = conn.execute(
             """SELECT * FROM observations
                WHERE origin=? AND destination=? AND cabin=?
@@ -44,33 +43,44 @@ def build_data(conn, cfg):
         median = round(statistics.median(history), 2) if len(history) >= \
             cfg["deal_rules"]["min_history_days"] else None
 
-        # depart x return grid from the latest scan
-        cells = conn.execute(
-            """SELECT depart_date, return_date, MIN(price_eur) p,
-                      airline FROM observations
+        # cheapest per departure day, latest scan (the month calendar)
+        cal = conn.execute(
+            """SELECT depart_date, MIN(price_eur) p, airline FROM observations
                WHERE origin=? AND destination=? AND cabin=?
                  AND observed_at=?
-               GROUP BY depart_date, return_date""", (*key, last_day)).fetchall()
-        matrix = {
-            "departs": sorted({c["depart_date"] for c in cells}),
-            "returns": sorted({c["return_date"] for c in cells}),
-            "cells": [{"depart": c["depart_date"], "ret": c["return_date"],
-                       "price": c["p"], "airline": c["airline"]} for c in cells],
-        }
+               GROUP BY depart_date ORDER BY depart_date""",
+            (*key, last_day)).fetchall()
         watches.append({
             "name": w["name"], "origin": w["origin"],
-            "destination": w["destination"], "cabin": w["cabin"],
+            "destination": w["destination"], "month": w["month"],
             "median": median,
             "best": {"price": best["price_eur"], "depart": best["depart_date"],
-                     "ret": best["return_date"], "airline": best["airline"],
+                     "airline": best["airline"],
+                     "airports": (f"{best['origin_airport']}→"
+                                  f"{best['destination_airport']}"
+                                  if best["origin_airport"] else None),
                      "link": best["deep_link"]} if best else None,
-            "matrix": matrix,
+            "calendar": [{"date": c["depart_date"], "price": c["p"],
+                          "airline": c["airline"]} for c in cal],
         })
         series.append({
-            "label": w["name"], "short": SHORT.get((w["destination"], w["cabin"]), ""),
-            "cabin": w["cabin"], "color_slot": len(series) % 4,
+            "label": w["name"],
+            "short": SHORT.get((w["origin"], w["destination"]), w["destination"]),
+            "panel": w["panel"], "color_slot": len(series) % 4,
             "points": [{"date": r["d"], "price": r["p"]} for r in daily],
         })
+
+    by_name = {w["name"]: w for w in watches}
+    trips = []
+    for pair in cfg.get("trip_pairs", []):
+        o, r = by_name.get(pair["out"]), by_name.get(pair["ret"])
+        if o and o["best"] and r and r["best"]:
+            trips.append({
+                "city": pair["city"],
+                "total": round(o["best"]["price"] + r["best"]["price"], 2),
+                "out_price": o["best"]["price"], "ret_price": r["best"]["price"],
+                "out_date": o["best"]["depart"], "ret_date": r["best"]["depart"],
+            })
 
     deals = conn.execute(
         """SELECT d.detected_at, d.pct_below_median, o.origin, o.destination,
@@ -84,6 +94,7 @@ def build_data(conn, cfg):
         "first_observation": meta["first"] or "—",
         "watches": watches,
         "series": series,
+        "trips": trips,
         "deals": [dict(d) for d in deals],
     }
 

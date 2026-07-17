@@ -1,13 +1,16 @@
 # flight-price-scanning
 
 Automated flight-price watcher: **NYC (EWR/JFK) ⇄ Japan (Tokyo/Osaka)**,
-depart mid-September 2026, return March 2027. Scans daily on GitHub Actions,
-records every price in SQLite, emails deal alerts in EUR with booking links
-(economy + big business-class drops), and publishes an HTML dashboard.
+out September 2026, back March 2027 — tracked as **two one-way legs** (the
+API caps round trips at a 30-day spread, and a 6-month stay is booked as two
+one-ways anyway). Scans daily on GitHub Actions, records every price in
+SQLite, emails deal alerts in EUR with booking links, and publishes an HTML
+dashboard with round-trip totals.
 
 Data source: **Travelpayouts/Aviasales Data API** (free; cached prices from
-real searches). Amadeus Self-Service was decommissioned on 2026-07-17 and is
-no longer an option.
+real searches). Amadeus Self-Service was decommissioned on 2026-07-17.
+**Economy only** — the free API rejects business class, so business tracking
+is parked until a viable free source exists.
 
 ## Setup (one time)
 

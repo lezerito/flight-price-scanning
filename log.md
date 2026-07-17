@@ -3,6 +3,27 @@
 One entry per date, newest first. Append an entry for every session that
 changes code, config, data handling, or project status.
 
+## 2026-07-18 (evening) — live: one-way legs, first real data, secrets set
+
+- First live API tests forced two design corrections (both verified against
+  the real API, documented in the SOP):
+  1. v3 rejects round trips with a >30-day spread → the Sep→Mar trip is now
+     **four one-way leg watches** (NYC→TYO/OSA Sep 2026; TYO/OSA→NYC Mar
+     2027), with round-trip totals (out+back) computed on the dashboard.
+  2. The API is **economy only** (v2: "Only economy trip class is
+     supported"; v3 silently ignores trip_class) → business watches removed;
+     feature parked until a free business-fare source exists.
+- Dashboard reworked: leg tiles + round-trip total tiles, outbound/return
+  panels, month-calendar heatmap (weekday grid) instead of the depart×return
+  matrix; deals/emails handle one-way rows.
+- **First real scan succeeded**: 7 NYC→TYO cached fares, cheapest €371
+  (LGA→NRT 2026-09-15, F9). OSA + Mar 2027 returns empty — normal 8 months
+  out. No alerts until 5 days of history (cold start).
+- User provided credentials in `.env` (gitignored; app password quoted —
+  spaces break `source` otherwise; mailer strips spaces before SMTP login).
+  Gmail SMTP login verified. All 4 GitHub Actions secrets set via
+  `gh secret set`.
+
 ## 2026-07-18 (later) — Amadeus decommissioned → Travelpayouts is primary
 
 - User reported the Amadeus for Developers self-service portal was shut down

@@ -1,9 +1,10 @@
 # Workflow: Flight Price Scan (NYC ⇄ Japan)
 
 ## Objective
-Collect flight prices daily for EWR/JFK → Japan (depart Sep 2026, return
-Mar 2027), build a price history, detect deals (economy + business-class
-drops), email alerts in EUR with booking links, and publish an HTML dashboard.
+Collect flight prices daily for EWR/JFK ⇄ Japan as **four one-way legs**
+(NYC→TYO and NYC→OSA in Sep 2026; TYO→NYC and OSA→NYC in Mar 2027), build a
+price history, detect deals, email alerts in EUR with booking links, and
+publish an HTML dashboard with round-trip totals (out + back).
 
 ## Inputs
 - `config.json` — watched routes (origin/destination/cabin + depart/return
@@ -12,9 +13,9 @@ drops), email alerts in EUR with booking links, and publish an HTML dashboard.
   `TRAVELPAYOUTS_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `MAIL_TO`.
 
 ## Tools (run in this order — or just `tools/run_daily.py` which chains them)
-1. `tools/scan.py` — one Travelpayouts v3 `prices_for_dates` query per watch
-   (whole depart-month × return-month, `trip_class` for cabin) → appends
-   every cached ticket to `data/prices.sqlite`.
+1. `tools/scan.py` — one Travelpayouts v3 `prices_for_dates` query per leg
+   (`one_way=true`, whole departure month) → appends every cached fare to
+   `data/prices.sqlite`.
 2. `tools/detect_deals.py` — compares today's best vs rolling 30-day history.
 3. `tools/send_alert.py` — Gmail SMTP alert; prints instead of sending when
    mail secrets are absent.
@@ -29,13 +30,22 @@ collecting/learning with no machine of ours running.
 - **2026-07-17: Amadeus Self-Service portal decommissioned** (keys dead, new
   registrations closed since spring 2026). Travelpayouts/Aviasales v3
   `prices_for_dates` is now the primary source: free, month-granularity
-  `departure_at`/`return_at` (YYYY-MM), `trip_class` 0/1 for economy/business,
-  EUR support, aviasales booking links. Enterprise Amadeus is contract-only —
-  not an option for a free system.
+  `departure_at` (YYYY-MM), EUR support, aviasales booking links. Enterprise
+  Amadeus is contract-only — not an option for a free system.
+- **One-way legs, not round trips (2026-07-18, verified live)**: the API
+  rejects round trips with return >30 days after departure ("diff between max
+  depart date and min return date exceeds supported maximum of 30"). The
+  Sep→Mar trip is therefore tracked as two one-way legs per city; the
+  dashboard sums them into a round-trip total.
+- **Economy only (2026-07-18, verified live)**: v3 ignores `trip_class`; v2
+  `prices/latest` returns "Only economy trip class is supported". Business
+  tracking is parked — no free API carries business fares. Do not re-add
+  `trip_class` params.
 - **Cached, not live**: prices are what Aviasales users found in the last
-  ~48h. Great for trends/deals; always re-verify before booking. Long
-  Sep→Mar round trips may have sparse cache coverage on some days — the
-  dashboard date grid fills in as combinations get cached.
+  ~48h. Great for trends/deals; always re-verify before booking. Return legs
+  8 months out have little/no cache at first (first real scan: 7 NYC→TYO
+  fares, 0 for OSA and the Mar 2027 returns) — coverage grows as departure
+  approaches; empty days are normal, not errors.
 - **Origin `NYC`** covers EWR + JFK + LGA; the actual airport of each offer
   is recorded per observation.
 - **Quota**: 4 API calls/day (one per watch) — no quota concern. Travelpayouts

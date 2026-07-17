@@ -2,45 +2,45 @@
   "currency": "EUR",
   "watches": [
     {
-      "name": "NYC -> Tokyo (economy)",
+      "name": "Outbound NYC -> Tokyo",
       "origin": "NYC",
       "destination": "TYO",
       "cabin": "ECONOMY",
-      "depart_month": "2026-09",
-      "return_month": "2027-03",
-      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 3 },
-      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 7 }
+      "month": "2026-09",
+      "panel": "out",
+      "mock_window": { "start": "2026-09-01", "end": "2026-09-30", "step_days": 2 }
     },
     {
-      "name": "NYC -> Osaka (economy)",
+      "name": "Outbound NYC -> Osaka",
       "origin": "NYC",
       "destination": "OSA",
       "cabin": "ECONOMY",
-      "depart_month": "2026-09",
-      "return_month": "2027-03",
-      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
-      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
+      "month": "2026-09",
+      "panel": "out",
+      "mock_window": { "start": "2026-09-01", "end": "2026-09-30", "step_days": 2 }
     },
     {
-      "name": "NYC -> Tokyo (business)",
-      "origin": "NYC",
-      "destination": "TYO",
-      "cabin": "BUSINESS",
-      "depart_month": "2026-09",
-      "return_month": "2027-03",
-      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
-      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
+      "name": "Return Tokyo -> NYC",
+      "origin": "TYO",
+      "destination": "NYC",
+      "cabin": "ECONOMY",
+      "month": "2027-03",
+      "panel": "ret",
+      "mock_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 2 }
     },
     {
-      "name": "NYC -> Osaka (business)",
-      "origin": "NYC",
-      "destination": "OSA",
-      "cabin": "BUSINESS",
-      "depart_month": "2026-09",
-      "return_month": "2027-03",
-      "mock_depart_window": { "start": "2026-09-10", "end": "2026-09-25", "step_days": 6 },
-      "mock_return_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 14 }
+      "name": "Return Osaka -> NYC",
+      "origin": "OSA",
+      "destination": "NYC",
+      "cabin": "ECONOMY",
+      "month": "2027-03",
+      "panel": "ret",
+      "mock_window": { "start": "2027-03-01", "end": "2027-03-31", "step_days": 2 }
     }
+  ],
+  "trip_pairs": [
+    { "city": "Tokyo", "out": "Outbound NYC -> Tokyo", "ret": "Return Tokyo -> NYC" },
+    { "city": "Osaka", "out": "Outbound NYC -> Osaka", "ret": "Return Osaka -> NYC" }
   ],
   "deal_rules": {
     "min_history_days": 5,

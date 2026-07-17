@@ -23,7 +23,8 @@ def render_html(deals):
             {CABIN_LABEL.get(d['cabin'], d['cabin'])}: €{d['price_eur']:,.0f}
           </div>
           <div style="color:#555;margin:4px 0">
-            Depart {d['depart_date']} · Return {d['return_date']}
+            Depart {d['depart_date']}
+            {('· Return ' + d['return_date']) if d.get('return_date') else '· one-way'}
             · Airline: {d.get('airline') or 'n/a'}</div>
           <div style="color:#0a7d32;margin:4px 0">
             {d['pct_below_median']}% below recent median
@@ -46,7 +47,8 @@ def send(deals):
     html = render_html(deals)
 
     addr = os.environ.get("GMAIL_ADDRESS")
-    pwd = os.environ.get("GMAIL_APP_PASSWORD")
+    # Google shows app passwords with spaces; SMTP wants them without.
+    pwd = (os.environ.get("GMAIL_APP_PASSWORD") or "").replace(" ", "")
     to = os.environ.get("MAIL_TO") or addr
     if not (addr and pwd and to):
         print("mail not configured — would have sent:")

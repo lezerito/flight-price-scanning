@@ -47,6 +47,7 @@
     border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;
   }
   h2 { font-size: 15px; margin: 0 0 4px; }
+  h3.panel-title { font-size: 13px; margin: 10px 0 4px; color: var(--text-secondary); font-weight: 600; }
   .note { color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
   .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 18px; }
   .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
@@ -80,8 +81,8 @@
   .matrix { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
   .matrix th { font-weight: 500; color: var(--muted); padding: 3px 6px; font-size: 11.5px; }
   .matrix td {
-    width: 64px; height: 34px; text-align: center; border-radius: 4px; cursor: default;
-    font-variant-numeric: tabular-nums;
+    width: 64px; height: 42px; padding: 2px; text-align: center; border-radius: 4px;
+    cursor: default; font-variant-numeric: tabular-nums; font-size: 11.5px;
   }
   .matrix td.best { outline: 2px solid var(--text-primary); font-weight: 700; }
   table.flat { width: 100%; border-collapse: collapse; font-size: 13px; }
@@ -112,23 +113,25 @@
 
   <div class="card">
     <h2>Daily best price</h2>
-    <p class="note">Cheapest cached fare found each scan day (departure any day in
-      Sep 2026 · return any day in Mar 2027). Prices in EUR, source Aviasales —
-      re-verify before booking.
-      Year-over-year overlay (Y-1, Y-2, Y-3) appears automatically once the
-      history spans previous years.</p>
-    <div id="panel-eco">
-      <div class="legend" id="eco-legend"></div>
-      <div class="chartbox" id="eco-box">
-        <svg id="eco-chart" width="980" height="240" role="img" aria-label="Daily best economy price per route"></svg>
-        <div class="tooltip" id="eco-tip"></div>
+    <p class="note">Cheapest cached one-way fare found each scan day. The trip is
+      tracked as two legs (out: any day Sep 2026 · back: any day Mar 2027) because
+      fares this far apart are booked as two one-ways. Prices in EUR, source
+      Aviasales — re-verify before booking. Year-over-year overlay (Y-1, Y-2, Y-3)
+      appears automatically once the history spans previous years.</p>
+    <div id="panel-out">
+      <h3 class="panel-title">Outbound — September 2026</h3>
+      <div class="legend" id="out-legend"></div>
+      <div class="chartbox" id="out-box">
+        <svg id="out-chart" width="980" height="220" role="img" aria-label="Daily best outbound price per route"></svg>
+        <div class="tooltip" id="out-tip"></div>
       </div>
     </div>
-    <div id="panel-biz" style="margin-top:14px">
-      <div class="legend" id="biz-legend"></div>
-      <div class="chartbox" id="biz-box">
-        <svg id="biz-chart" width="980" height="190" role="img" aria-label="Daily best business price"></svg>
-        <div class="tooltip" id="biz-tip"></div>
+    <div id="panel-ret" style="margin-top:14px">
+      <h3 class="panel-title">Return — March 2027</h3>
+      <div class="legend" id="ret-legend"></div>
+      <div class="chartbox" id="ret-box">
+        <svg id="ret-chart" width="980" height="220" role="img" aria-label="Daily best return price per route"></svg>
+        <div class="tooltip" id="ret-tip"></div>
       </div>
     </div>
     <details style="margin-top:8px"><summary>View as table</summary>
@@ -137,13 +140,14 @@
   </div>
 
   <div class="card">
-    <h2>Date grid — cheapest by departure × return</h2>
-    <p class="note">Latest scan. Lighter = cheaper. The outlined cell is the best
-      combination. Empty cells = no cached fare for that date pair yet.</p>
-    <div class="tabs" id="matrix-tabs"></div>
+    <h2>Month calendar — cheapest by departure day</h2>
+    <p class="note">Latest scan. Lighter = cheaper; the outlined day is the best.
+      Missing days = no cached fare yet (normal far from the date — coverage
+      fills in as departure approaches).</p>
+    <div class="tabs" id="cal-tabs"></div>
     <div class="chartbox">
-      <div id="matrix-holder" style="overflow-x:auto"></div>
-      <div class="tooltip" id="matrix-tip"></div>
+      <div id="cal-holder" style="overflow-x:auto"></div>
+      <div class="tooltip" id="cal-tip"></div>
     </div>
   </div>
 
@@ -161,7 +165,7 @@
       <label>From <input name="o" value="EWR" size="6" required></label>
       <label>To <input name="d" value="TYO" size="6" required></label>
       <label>Depart <input name="dep" type="date" value="2026-09-15" required></label>
-      <label>Return <input name="ret" type="date" value="2027-03-10" required></label>
+      <label>Return (empty = one-way) <input name="ret" type="date" value="2027-03-10"></label>
       <label>Cabin
         <select name="cabin">
           <option value="">Economy</option>
@@ -173,7 +177,7 @@
 </div>
 
 <script>
-const DATA = {"generated_at": "2026-07-18", "n_observations": 0, "first_observation": "\u2014", "watches": [{"name": "NYC -> Tokyo (economy)", "origin": "NYC", "destination": "TYO", "cabin": "ECONOMY", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Osaka (economy)", "origin": "NYC", "destination": "OSA", "cabin": "ECONOMY", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Tokyo (business)", "origin": "NYC", "destination": "TYO", "cabin": "BUSINESS", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}, {"name": "NYC -> Osaka (business)", "origin": "NYC", "destination": "OSA", "cabin": "BUSINESS", "median": null, "best": null, "matrix": {"departs": [], "returns": [], "cells": []}}], "series": [{"label": "NYC -> Tokyo (economy)", "short": "TYO eco", "cabin": "ECONOMY", "color_slot": 0, "points": []}, {"label": "NYC -> Osaka (economy)", "short": "OSA eco", "cabin": "ECONOMY", "color_slot": 1, "points": []}, {"label": "NYC -> Tokyo (business)", "short": "TYO biz", "cabin": "BUSINESS", "color_slot": 2, "points": []}, {"label": "NYC -> Osaka (business)", "short": "OSA biz", "cabin": "BUSINESS", "color_slot": 3, "points": []}], "deals": []};
+const DATA = {"generated_at": "2026-07-18", "n_observations": 7, "first_observation": "2026-07-18", "watches": [{"name": "Outbound NYC -> Tokyo", "origin": "NYC", "destination": "TYO", "month": "2026-09", "median": null, "best": {"price": 371.0, "depart": "2026-09-15", "airline": "F9", "airports": "LGA\u2192NRT", "link": "https://www.aviasales.com/search/NYC1509TYO1?t=ZG17894535001789675200002915LGAATLSFONRT_9508005d8c1b236b3d817598564fd2fe_33236&search_date=16072026&expected_price_uuid=019f6b8c-b0e7-8040-a36b-a13c6d05713b&static_fare_key=TY%7CP0%7CH0%7CL0%7CCH0%7CR0%7CTBC0&itinerary_key=IYFcd7QE5Iqwb90IJPMcKQ&expected_price_source=share&expected_price_currency=eur&expected_price=371"}, "calendar": [{"date": "2026-09-10", "price": 399.0, "airline": "F9"}, {"date": "2026-09-14", "price": 411.0, "airline": "B6"}, {"date": "2026-09-15", "price": 371.0, "airline": "F9"}, {"date": "2026-09-18", "price": 398.0, "airline": "AS"}, {"date": "2026-09-20", "price": 505.0, "airline": "NH"}, {"date": "2026-09-23", "price": 534.0, "airline": "AS"}, {"date": "2026-09-26", "price": 604.0, "airline": "AS"}]}, {"name": "Outbound NYC -> Osaka", "origin": "NYC", "destination": "OSA", "month": "2026-09", "median": null, "best": null, "calendar": []}, {"name": "Return Tokyo -> NYC", "origin": "TYO", "destination": "NYC", "month": "2027-03", "median": null, "best": null, "calendar": []}, {"name": "Return Osaka -> NYC", "origin": "OSA", "destination": "NYC", "month": "2027-03", "median": null, "best": null, "calendar": []}], "series": [{"label": "Outbound NYC -> Tokyo", "short": "\u2192 TYO", "panel": "out", "color_slot": 0, "points": [{"date": "2026-07-18", "price": 371.0}]}, {"label": "Outbound NYC -> Osaka", "short": "\u2192 OSA", "panel": "out", "color_slot": 1, "points": []}, {"label": "Return Tokyo -> NYC", "short": "TYO \u2192", "panel": "ret", "color_slot": 2, "points": []}, {"label": "Return Osaka -> NYC", "short": "OSA \u2192", "panel": "ret", "color_slot": 3, "points": []}], "trips": [], "deals": []};
 
 const fmtEur = v => "€" + Math.round(v).toLocaleString("en-US");
 const SERIES_VARS = ["--series-1", "--series-2", "--series-3", "--series-4"];
@@ -183,13 +187,13 @@ document.getElementById("generated").textContent =
   "Last scan: " + DATA.generated_at + " · " + DATA.n_observations +
   " price observations collected since " + DATA.first_observation;
 
-/* ---------- stat tiles ---------- */
+/* ---------- stat tiles: one per leg + round-trip totals ---------- */
 (function tiles() {
   const holder = document.getElementById("tiles");
   DATA.watches.forEach((w, i) => {
     const el = document.createElement("div");
     el.className = "tile";
-    if (!w.best) { el.innerHTML = `<div class="label">${w.name}</div><div class="empty">no data yet</div>`; holder.appendChild(el); return; }
+    if (!w.best) { el.innerHTML = `<div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div><div class="empty">no cached fare yet for ${w.month}</div>`; holder.appendChild(el); return; }
     let delta = "";
     if (w.median != null) {
       const pct = ((w.best.price - w.median) / w.median * 100);
@@ -203,8 +207,18 @@ document.getElementById("generated").textContent =
       <div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div>
       <div class="value">${fmtEur(w.best.price)}</div>
       <div class="delta">${delta}</div>
-      <div class="dates">${w.best.depart} → ${w.best.ret}${w.best.airline ? " · " + w.best.airline : ""}</div>
-      <a href="${w.best.link}" target="_blank" rel="noopener">Open in Google Flights →</a>`;
+      <div class="dates">${w.best.depart}${w.best.airports ? " · " + w.best.airports : ""}${w.best.airline ? " · " + w.best.airline : ""}</div>
+      <a href="${w.best.link}" target="_blank" rel="noopener">Open offer →</a>`;
+    holder.appendChild(el);
+  });
+  DATA.trips.forEach(t => {
+    const el = document.createElement("div");
+    el.className = "tile";
+    el.innerHTML = `
+      <div class="label">🔁 ${t.city} round trip (two one-ways)</div>
+      <div class="value">${fmtEur(t.total)}</div>
+      <div class="delta">${fmtEur(t.out_price)} out + ${fmtEur(t.ret_price)} back</div>
+      <div class="dates">${t.out_date} → ${t.ret_date}</div>`;
     holder.appendChild(el);
   });
 })();
@@ -290,8 +304,8 @@ function renderLinePanel(prefix, series, H) {
   svg.addEventListener("mouseleave", () => { tip.style.display = "none"; xh.style.display = "none"; });
 }
 
-renderLinePanel("eco", DATA.series.filter(s => s.cabin === "ECONOMY"), 240);
-renderLinePanel("biz", DATA.series.filter(s => s.cabin === "BUSINESS"), 190);
+renderLinePanel("out", DATA.series.filter(s => s.panel === "out"), 220);
+renderLinePanel("ret", DATA.series.filter(s => s.panel === "ret"), 220);
 
 (function lineTable() {
   const series = DATA.series.filter(s => s.points.length);
@@ -305,48 +319,52 @@ renderLinePanel("biz", DATA.series.filter(s => s.cabin === "BUSINESS"), 190);
     }).join("") + "</tr>").join("");
 })();
 
-/* ---------- date-grid heatmap ---------- */
-(function matrix() {
-  const tabs = document.getElementById("matrix-tabs");
-  const holder = document.getElementById("matrix-holder");
-  const tip = document.getElementById("matrix-tip");
+/* ---------- month calendar heatmap (per leg) ---------- */
+(function calendar() {
+  const tabs = document.getElementById("cal-tabs");
+  const holder = document.getElementById("cal-holder");
+  const tip = document.getElementById("cal-tip");
   const ramp = ["--seq-100","--seq-200","--seq-300","--seq-400","--seq-500","--seq-600","--seq-700"];
-  const withGrid = DATA.watches.map((w, i) => ({ w, i })).filter(o => o.w.matrix && o.w.matrix.cells.length);
-  if (!withGrid.length) { holder.innerHTML = '<div class="empty">No grid data yet.</div>'; return; }
-  withGrid.forEach((o, k) => {
+  const withCal = DATA.watches.filter(w => w.calendar && w.calendar.length);
+  if (!withCal.length) { holder.innerHTML = '<div class="empty">No calendar data yet.</div>'; return; }
+  withCal.forEach((w, k) => {
     const b = document.createElement("button");
-    b.textContent = o.w.name; b.type = "button";
-    b.onclick = () => { tabs.querySelectorAll("button").forEach(x => x.classList.remove("active")); b.classList.add("active"); render(o.w); };
+    b.textContent = w.name; b.type = "button";
+    b.onclick = () => { tabs.querySelectorAll("button").forEach(x => x.classList.remove("active")); b.classList.add("active"); render(w); };
     if (k === 0) b.classList.add("active");
     tabs.appendChild(b);
   });
   function render(w) {
-    const M = w.matrix;
-    const prices = M.cells.map(c => c.price);
+    // full month grid: 7 columns (Mon-Sun), one row per week
+    const [yy, mm] = w.month.split("-").map(Number);
+    const byDate = Object.fromEntries(w.calendar.map(c => [c.date, c]));
+    const prices = w.calendar.map(c => c.price);
     const lo = Math.min(...prices), hi = Math.max(...prices);
-    const get = (dep, ret) => M.cells.find(c => c.depart === dep && c.ret === ret);
-    let html = '<table class="matrix"><tr><th>ret \\ dep</th>' +
-      M.departs.map(d => `<th>${d.slice(5)}</th>`).join("") + "</tr>";
-    M.returns.forEach(rt => {
-      html += `<tr><th>${rt.slice(5)}</th>`;
-      M.departs.forEach(dp => {
-        const c = get(dp, rt);
-        if (!c) { html += "<td></td>"; return; }
+    const daysInMonth = new Date(yy, mm, 0).getDate();
+    const firstDow = (new Date(yy, mm - 1, 1).getDay() + 6) % 7; // Mon=0
+    let html = '<table class="matrix"><tr>' +
+      ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<th>${d}</th>`).join("") + "</tr><tr>";
+    for (let i = 0; i < firstDow; i++) html += "<td></td>";
+    for (let day = 1; day <= daysInMonth; day++) {
+      const date = `${w.month}-${String(day).padStart(2, "0")}`;
+      const c = byDate[date];
+      if (c) {
         const t = hi === lo ? 0 : (c.price - lo) / (hi - lo);
         const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
-        const dark = idx >= 3;
         const isBest = c.price === lo;
-        html += `<td class="${isBest ? "best" : ""}" data-dep="${dp}" data-ret="${rt}" data-p="${c.price}" data-a="${c.airline || ""}"
-          style="background:var(${ramp[idx]});color:${dark ? "#fff" : "#0b0b0b"}">${isBest ? fmtEur(c.price) : ""}</td>`;
-      });
-      html += "</tr>";
-    });
-    html += "</table>";
+        html += `<td class="${isBest ? "best" : ""}" data-d="${date}" data-p="${c.price}" data-a="${c.airline || ""}"
+          style="background:var(${ramp[idx]});color:${idx >= 3 ? "#fff" : "#0b0b0b"}">${day}${isBest ? "<br>" + fmtEur(c.price) : ""}</td>`;
+      } else {
+        html += `<td style="color:var(--muted)">${day}</td>`;
+      }
+      if ((firstDow + day) % 7 === 0 && day !== daysInMonth) html += "</tr><tr>";
+    }
+    html += "</tr></table>";
     holder.innerHTML = html;
     holder.querySelectorAll("td[data-p]").forEach(td => {
       td.addEventListener("mousemove", ev => {
         tip.style.display = "block";
-        tip.innerHTML = `<div class="t-date">${td.dataset.dep} → ${td.dataset.ret}</div>
+        tip.innerHTML = `<div class="t-date">${td.dataset.d}</div>
           <div class="t-row"><span>${td.dataset.a || "best offer"}</span><b>${fmtEur(+td.dataset.p)}</b></div>`;
         const bx = holder.parentElement.getBoundingClientRect();
         tip.style.left = Math.min(ev.clientX - bx.left + 12, bx.width - 180) + "px";
@@ -355,7 +373,7 @@ renderLinePanel("biz", DATA.series.filter(s => s.cabin === "BUSINESS"), 190);
       td.addEventListener("mouseleave", () => tip.style.display = "none");
     });
   }
-  render(withGrid[0].w);
+  render(withCal[0]);
 })();
 
 /* ---------- deals ---------- */
@@ -370,7 +388,7 @@ renderLinePanel("biz", DATA.series.filter(s => s.cabin === "BUSINESS"), 190);
       <td>${d.detected_at}</td>
       <td>${d.origin} → ${d.destination}</td>
       <td><span class="pill">${d.cabin.toLowerCase()}</span></td>
-      <td>${d.depart_date} → ${d.return_date}</td>
+      <td>${d.depart_date}${d.return_date ? " → " + d.return_date : " (one-way)"}</td>
       <td><b>${fmtEur(d.price_eur)}</b></td>
       <td style="color:var(--delta-good)">▼ ${d.pct_below_median}%</td>
       <td><a href="${d.deep_link}" target="_blank" rel="noopener">book →</a></td>
@@ -382,7 +400,8 @@ document.getElementById("search-form").addEventListener("submit", ev => {
   ev.preventDefault();
   const f = new FormData(ev.target);
   const cabin = f.get("cabin") ? "%20" + f.get("cabin") + "%20class" : "";
-  window.open(`https://www.google.com/travel/flights?q=Flights%20from%20${f.get("o")}%20to%20${f.get("d")}%20on%20${f.get("dep")}%20through%20${f.get("ret")}${cabin}&curr=EUR`, "_blank");
+  const ret = f.get("ret") ? `%20through%20${f.get("ret")}` : "%20one%20way";
+  window.open(`https://www.google.com/travel/flights?q=Flights%20from%20${f.get("o")}%20to%20${f.get("d")}%20on%20${f.get("dep")}${ret}${cabin}&curr=EUR`, "_blank");
 });
 </script>
 </body>

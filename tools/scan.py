@@ -1,6 +1,9 @@
-"""Daily scan: query the Travelpayouts/Aviasales v3 API for each watched
-route+cabin over whole departure/return months, and record every price
-observation in SQLite.
+"""Daily scan: one Travelpayouts v3 one-way query per watched leg (whole
+departure month), recording every cached fare in SQLite.
+
+The trip is tracked as two one-way legs (out Sep 2026, back Mar 2027) because
+the API rejects round trips with a >30-day spread — and a 6-month stay is
+usually booked as two one-ways anyway.
 
 MOCK_SCAN=1 (or --mock) generates plausible data with no API calls, including
 a 30-day backfill on an empty DB so the full pipeline can be tested.
@@ -35,25 +38,21 @@ def date_grid(window):
     return dates
 
 
-def google_flights_link(origin, destination, depart, ret, cabin):
-    cabin_txt = "%20business%20class" if cabin == "BUSINESS" else ""
+def google_flights_link(origin, destination, depart):
     return (f"https://www.google.com/travel/flights?q=Flights%20from%20{origin}"
-            f"%20to%20{destination}%20on%20{depart}%20through%20{ret}{cabin_txt}")
+            f"%20to%20{destination}%20on%20{depart}%20one%20way")
 
 
 # ---------------------------------------------------------------- real scan
 
 def scan_travelpayouts(conn, cfg, today):
-    """One month-pair query per watch: every cached ticket found in the last
-    ~48h for depart-month x return-month becomes an observation."""
     import travelpayouts_client
     n = 0
     for watch in cfg["watches"]:
         try:
-            rows = travelpayouts_client.prices_for_dates(
-                watch["origin"], watch["destination"],
-                watch["depart_month"], watch["return_month"],
-                cabin=watch["cabin"], currency=cfg["currency"])
+            rows = travelpayouts_client.one_way_prices(
+                watch["origin"], watch["destination"], watch["month"],
+                currency=cfg["currency"])
         except Exception as e:  # keep scanning other watches
             print(f"  travelpayouts error {watch['name']}: {e}")
             continue
@@ -65,12 +64,11 @@ def scan_travelpayouts(conn, cfg, today):
                 "origin": watch["origin"], "destination": watch["destination"],
                 "origin_airport": r["origin_airport"],
                 "destination_airport": r["destination_airport"],
-                "depart_date": r["depart_date"], "return_date": r["return_date"],
+                "depart_date": r["depart_date"], "return_date": None,
                 "cabin": watch["cabin"], "price_eur": r["price_eur"],
                 "airline": r["airline"],
                 "deep_link": r["link"] or google_flights_link(
-                    watch["origin"], watch["destination"], r["depart_date"],
-                    r["return_date"], watch["cabin"]),
+                    watch["origin"], watch["destination"], r["depart_date"]),
             })
             n += 1
         time.sleep(0.3)
@@ -79,16 +77,16 @@ def scan_travelpayouts(conn, cfg, today):
 
 # ---------------------------------------------------------------- mock scan
 
-MOCK_BASE = {("TYO", "ECONOMY"): 950, ("OSA", "ECONOMY"): 1010,
-             ("TYO", "BUSINESS"): 3800, ("OSA", "BUSINESS"): 4100}
+MOCK_BASE = {("NYC", "TYO"): 450, ("NYC", "OSA"): 480,
+             ("TYO", "NYC"): 420, ("OSA", "NYC"): 460}
 
 
-def _mock_price(destination, cabin, depart, ret, day):
-    seed = int(hashlib.md5(f"{destination}{cabin}{depart}{ret}{day}".encode())
+def _mock_price(origin, destination, depart, day):
+    seed = int(hashlib.md5(f"{origin}{destination}{depart}{day}".encode())
                .hexdigest()[:8], 16)
     rng = random.Random(seed)
-    base = MOCK_BASE[(destination, cabin)]
-    price = base * rng.uniform(0.88, 1.18)
+    base = MOCK_BASE[(origin, destination)]
+    price = base * rng.uniform(0.85, 1.20)
     if rng.random() < 0.04:  # occasional genuine dip
         price *= 0.70
     return round(price, 2)
@@ -103,22 +101,21 @@ def scan_mock(conn, cfg, today):
     for day in days:
         day_s = day.isoformat()
         for watch in cfg["watches"]:
-            for depart in date_grid(watch["mock_depart_window"]):
-                for ret in date_grid(watch["mock_return_window"]):
-                    db.insert_observation(conn, {
-                        "observed_at": day_s, "source": "mock",
-                        "origin": watch["origin"], "destination": watch["destination"],
-                        "origin_airport": "EWR", "destination_airport": "NRT",
-                        "depart_date": depart, "return_date": ret,
-                        "cabin": watch["cabin"],
-                        "price_eur": _mock_price(watch["destination"], watch["cabin"],
-                                                 depart, ret, day_s),
-                        "airline": "NH",
-                        "deep_link": google_flights_link(
-                            watch["origin"], watch["destination"], depart, ret,
-                            watch["cabin"]),
-                    })
-                    n += 1
+            for depart in date_grid(watch["mock_window"]):
+                db.insert_observation(conn, {
+                    "observed_at": day_s, "source": "mock",
+                    "origin": watch["origin"], "destination": watch["destination"],
+                    "origin_airport": "EWR" if watch["origin"] == "NYC" else "NRT",
+                    "destination_airport": "NRT" if watch["origin"] == "NYC" else "EWR",
+                    "depart_date": depart, "return_date": None,
+                    "cabin": watch["cabin"],
+                    "price_eur": _mock_price(watch["origin"], watch["destination"],
+                                             depart, day_s),
+                    "airline": "NH",
+                    "deep_link": google_flights_link(
+                        watch["origin"], watch["destination"], depart),
+                })
+                n += 1
     return n
 
 

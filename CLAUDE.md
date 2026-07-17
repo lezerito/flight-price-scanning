@@ -24,8 +24,9 @@ Runs daily on GitHub Actions, accumulates its own price history (the
 - **Data**: `data/prices.sqlite` is the system's memory — never delete it
   once real collection has started. `docs/index.html` is generated output;
   edit `tools/dashboard_template.html` instead.
-- **Data source**: Travelpayouts/Aviasales v3 `prices_for_dates` (cached
-  prices, month-granularity queries, `trip_class` for business). Amadeus
+- **Data source**: Travelpayouts/Aviasales v3 `prices_for_dates`, one query
+  per one-way leg (cached prices, month granularity, economy only — the API
+  rejects business class and >30-day round trips; see the SOP). Amadeus
   Self-Service is DEAD (decommissioned 2026-07-17) — do not reintroduce it.
 - **Secrets** live only in `.env` (local) / GitHub Actions Secrets:
   `TRAVELPAYOUTS_TOKEN`, `GMAIL_ADDRESS`, `GMAIL_APP_PASSWORD`, `MAIL_TO`.

@@ -4,6 +4,12 @@ Primary source since Amadeus Self-Service was decommissioned (2026-07-17).
 Prices are cached from real Aviasales user searches (last ~48h): great for
 trend tracking and deal detection, but re-verify before booking.
 
+Hard constraints learned from the live API (2026-07-18):
+- prices_for_dates rejects round trips with return > 30 days after departure
+  → long stays must be tracked as two one-way legs.
+- Economy only: trip_class is ignored by v3 and v2 rejects trip_class=1 with
+  "Only economy trip class is supported". No business-class data exists here.
+
 Docs: https://support.travelpayouts.com/hc/en-us/articles/203956163
 """
 import os
@@ -11,17 +17,14 @@ import os
 import requests
 
 API = "https://api.travelpayouts.com"
-TRIP_CLASS = {"ECONOMY": 0, "BUSINESS": 1}
 
 
-def prices_for_dates(origin, destination, departure_at, return_at,
-                     cabin="ECONOMY", currency="EUR", limit=100):
-    """Cheapest cached round-trip tickets for a date or a whole month.
+def one_way_prices(origin, destination, month, currency="EUR", limit=200):
+    """Cheapest cached one-way tickets for a whole departure month.
 
-    departure_at / return_at accept 'YYYY-MM-DD' or 'YYYY-MM' (whole month).
-    Returns a list of dicts:
-    {depart_date, return_date, price_eur, airline, origin_airport,
-     destination_airport, transfers, link}
+    month: 'YYYY-MM'. Returns a list of dicts:
+    {depart_date, price_eur, airline, origin_airport, destination_airport,
+     transfers, link}
     """
     resp = requests.get(
         f"{API}/aviasales/v3/prices_for_dates",
@@ -29,12 +32,10 @@ def prices_for_dates(origin, destination, departure_at, return_at,
         params={
             "origin": origin,
             "destination": destination,
-            "departure_at": departure_at,
-            "return_at": return_at,
-            "trip_class": TRIP_CLASS.get(cabin, 0),
-            "currency": currency.lower(),
-            "one_way": "false",
+            "departure_at": month,
+            "one_way": "true",
             "unique": "false",
+            "currency": currency.lower(),
             "sorting": "price",
             "limit": limit,
         },
@@ -47,7 +48,6 @@ def prices_for_dates(origin, destination, departure_at, return_at,
         link = r.get("link")
         out.append({
             "depart_date": (r.get("departure_at") or "")[:10],
-            "return_date": (r.get("return_at") or "")[:10],
             "price_eur": float(r["price"]),
             "airline": r.get("airline"),
             "origin_airport": r.get("origin_airport"),
