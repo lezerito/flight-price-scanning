@@ -3,6 +3,16 @@
 One entry per date, newest first. Append an entry for every session that
 changes code, config, data handling, or project status.
 
+## 2026-07-18 (night) — repo public, dashboard hosted on GitHub Pages
+
+- User approved making this repo (and only this repo) public — repo
+  visibility is per-repository, other repos unaffected (verified: it is the
+  only public repo on the account). Secrets stay in Actions Secrets /
+  gitignored `.env`, never in the repo.
+- GitHub Pages enabled (main branch, `/docs`). Dashboard URL:
+  https://lezerito.github.io/flight-price-scanning/ — refreshes
+  automatically with each daily scan commit.
+
 ## 2026-07-18 (evening) — live: one-way legs, first real data, secrets set
 
 - First live API tests forced two design corrections (both verified against
