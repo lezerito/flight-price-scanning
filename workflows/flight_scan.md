@@ -67,6 +67,10 @@ collecting/learning with no machine of ours running.
 - Email alert when a deal fires.
 
 ## Edge cases
+- Dates are recorded from the machine's clock: the Actions runner uses UTC,
+  local manual runs use local time — a manual scan can land on the adjacent
+  `observed_at` date. Harmless at daily granularity (baselines use MIN per
+  day); avoid running manual scans right around the 06:00 UTC schedule.
 - Per-watch API errors are logged and skipped; the scan continues.
 - Empty cache for a month pair → no observations that day (not an error).
 - Mail failure → non-fatal; scan data and dashboard still commit.
