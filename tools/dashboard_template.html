@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Flight Price Scanner — NYC ⇄ Japan</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f9f9f7; --surface-1: #fcfcfb;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --muted: #898781;
+    --grid: #e1e0d9; --baseline: #c3c2b7; --border: rgba(11,11,11,0.10);
+    --series-1: #2a78d6; --series-2: #008300; --series-3: #e87ba4;
+    --delta-good: #006300; --delta-bad: #d03b3b;
+    --seq-100:#cde2fb; --seq-200:#9ec5f4; --seq-300:#6da7ec; --seq-400:#3987e5;
+    --seq-500:#256abf; --seq-600:#184f95; --seq-700:#0d366b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface-1: #1a1a19;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+      --series-1: #3987e5; --series-2: #008300; --series-3: #d55181;
+      --delta-good: #0ca30c; --delta-bad: #d03b3b;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #0d0d0d; --surface-1: #1a1a19;
+    --text-primary: #ffffff; --text-secondary: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --baseline: #383835; --border: rgba(255,255,255,0.10);
+    --series-1: #3987e5; --series-2: #008300; --series-3: #d55181;
+    --delta-good: #0ca30c; --delta-bad: #d03b3b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--page); color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.45;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { font-size: 22px; margin: 0 0 2px; }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 10px; padding: 16px 18px; margin-bottom: 18px;
+  }
+  h2 { font-size: 15px; margin: 0 0 4px; }
+  .note { color: var(--muted); font-size: 12.5px; margin: 0 0 12px; }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 18px; }
+  .tile { background: var(--surface-1); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .tile .label { font-size: 12.5px; color: var(--text-secondary); display:flex; align-items:center; gap:7px; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; flex: 0 0 auto; }
+  .tile .value { font-size: 27px; font-weight: 650; margin: 3px 0 1px; }
+  .tile .delta { font-size: 12.5px; color: var(--text-secondary); }
+  .tile .delta .down { color: var(--delta-good); font-weight: 600; }
+  .tile .delta .up { color: var(--delta-bad); font-weight: 600; }
+  .tile .dates { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .tile a { color: var(--series-1); font-size: 12.5px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; color: var(--text-secondary); margin-bottom: 6px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .chartbox { position: relative; overflow-x: auto; }
+  svg text { font-family: inherit; }
+  .tooltip {
+    position: absolute; pointer-events: none; display: none; z-index: 5;
+    background: var(--surface-1); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 10px; font-size: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,.12); min-width: 150px;
+  }
+  .tooltip .t-date { color: var(--muted); margin-bottom: 4px; }
+  .tooltip .t-row { display: flex; justify-content: space-between; gap: 12px; }
+  .tooltip .t-row b { font-variant-numeric: tabular-nums; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+  .tabs button {
+    font: inherit; font-size: 12.5px; padding: 5px 11px; border-radius: 999px;
+    border: 1px solid var(--border); background: transparent; color: var(--text-secondary); cursor: pointer;
+  }
+  .tabs button.active { background: var(--series-1); border-color: var(--series-1); color: #fff; }
+  .matrix { border-collapse: separate; border-spacing: 2px; font-size: 12px; }
+  .matrix th { font-weight: 500; color: var(--muted); padding: 3px 6px; font-size: 11.5px; }
+  .matrix td {
+    width: 64px; height: 34px; text-align: center; border-radius: 4px; cursor: default;
+    font-variant-numeric: tabular-nums;
+  }
+  .matrix td.best { outline: 2px solid var(--text-primary); font-weight: 700; }
+  table.flat { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.flat th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; border-bottom: 1px solid var(--grid); padding: 6px 8px; }
+  table.flat td { padding: 7px 8px; border-bottom: 1px solid var(--grid); font-variant-numeric: tabular-nums; }
+  table.flat a { color: var(--series-1); }
+  .pill { font-size: 11.5px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--text-secondary); }
+  form.search { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  form.search label { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; }
+  form.search input, form.search select {
+    font: inherit; font-size: 13.5px; padding: 6px 9px; border-radius: 7px;
+    border: 1px solid var(--baseline); background: var(--surface-1); color: var(--text-primary);
+  }
+  form.search button {
+    font: inherit; font-size: 13.5px; padding: 7px 16px; border-radius: 7px; cursor: pointer;
+    border: 1px solid var(--series-1); background: var(--series-1); color: #fff;
+  }
+  details summary { cursor: pointer; font-size: 12.5px; color: var(--text-secondary); }
+  .empty { color: var(--muted); font-size: 13px; padding: 8px 0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>✈️ Flight Price Scanner — NYC ⇄ Japan</h1>
+  <div class="sub" id="generated"></div>
+
+  <div class="tiles" id="tiles"></div>
+
+  <div class="card">
+    <h2>Daily best price</h2>
+    <p class="note">Cheapest offer found each scan day across the watched date grids
+      (depart mid-Sep 2026 · return Mar 2027). Prices in EUR.
+      Year-over-year overlay (Y-1, Y-2, Y-3) appears automatically once the
+      history spans previous years.</p>
+    <div id="panel-eco">
+      <div class="legend" id="eco-legend"></div>
+      <div class="chartbox" id="eco-box">
+        <svg id="eco-chart" width="980" height="240" role="img" aria-label="Daily best economy price per route"></svg>
+        <div class="tooltip" id="eco-tip"></div>
+      </div>
+    </div>
+    <div id="panel-biz" style="margin-top:14px">
+      <div class="legend" id="biz-legend"></div>
+      <div class="chartbox" id="biz-box">
+        <svg id="biz-chart" width="980" height="190" role="img" aria-label="Daily best business price"></svg>
+        <div class="tooltip" id="biz-tip"></div>
+      </div>
+    </div>
+    <details style="margin-top:8px"><summary>View as table</summary>
+      <div style="overflow-x:auto"><table class="flat" id="line-table"></table></div>
+    </details>
+  </div>
+
+  <div class="card">
+    <h2>Date grid — cheapest by departure × return</h2>
+    <p class="note">Latest scan. Lighter = cheaper. The outlined cell is the best combination.</p>
+    <div class="tabs" id="matrix-tabs"></div>
+    <div class="chartbox">
+      <div id="matrix-holder" style="overflow-x:auto"></div>
+      <div class="tooltip" id="matrix-tip"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Detected deals</h2>
+    <p class="note">Triggered when a price falls below the 15th percentile of recent
+      scans, or ≥25% (economy) / ≥30% (business) below the recent median.</p>
+    <div style="overflow-x:auto" id="deals-holder"></div>
+  </div>
+
+  <div class="card">
+    <h2>Manual search</h2>
+    <p class="note">Opens Google Flights with your query (live prices, bookable link).</p>
+    <form class="search" id="search-form">
+      <label>From <input name="o" value="EWR" size="6" required></label>
+      <label>To <input name="d" value="TYO" size="6" required></label>
+      <label>Depart <input name="dep" type="date" value="2026-09-15" required></label>
+      <label>Return <input name="ret" type="date" value="2027-03-10" required></label>
+      <label>Cabin
+        <select name="cabin">
+          <option value="">Economy</option>
+          <option value="business">Business</option>
+        </select></label>
+      <button type="submit">Search on Google Flights</button>
+    </form>
+  </div>
+</div>
+
+<script>
+const DATA = /*__DATA__*/null;
+
+const fmtEur = v => "€" + Math.round(v).toLocaleString("en-US");
+const SERIES_VARS = ["--series-1", "--series-2", "--series-3"];
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+document.getElementById("generated").textContent =
+  "Last scan: " + DATA.generated_at + " · " + DATA.n_observations +
+  " price observations collected since " + DATA.first_observation;
+
+/* ---------- stat tiles ---------- */
+(function tiles() {
+  const holder = document.getElementById("tiles");
+  DATA.watches.forEach((w, i) => {
+    const el = document.createElement("div");
+    el.className = "tile";
+    if (!w.best) { el.innerHTML = `<div class="label">${w.name}</div><div class="empty">no data yet</div>`; holder.appendChild(el); return; }
+    let delta = "";
+    if (w.median != null) {
+      const pct = ((w.best.price - w.median) / w.median * 100);
+      const cls = pct <= 0 ? "down" : "up";
+      const arrow = pct <= 0 ? "▼" : "▲";
+      delta = `<span class="${cls}">${arrow} ${Math.abs(pct).toFixed(0)}%</span> vs ${fmtEur(w.median)} recent median`;
+    } else {
+      delta = "collecting baseline…";
+    }
+    el.innerHTML = `
+      <div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 3]})"></span>${w.name}</div>
+      <div class="value">${fmtEur(w.best.price)}</div>
+      <div class="delta">${delta}</div>
+      <div class="dates">${w.best.depart} → ${w.best.ret}${w.best.airline ? " · " + w.best.airline : ""}</div>
+      <a href="${w.best.link}" target="_blank" rel="noopener">Open in Google Flights →</a>`;
+    holder.appendChild(el);
+  });
+})();
+
+/* ---------- line chart panels (economy / business — separate scales) ---------- */
+function renderLinePanel(prefix, series, H) {
+  const panel = document.getElementById("panel-" + prefix);
+  const svg = document.getElementById(prefix + "-chart");
+  series = series.filter(s => s.points.length);
+  if (!series.length) { panel.style.display = "none"; return; }
+  const W = 980, m = { t: 14, r: 150, b: 28, l: 56 };
+  const iw = W - m.l - m.r, ih = H - m.t - m.b;
+  const dates = [...new Set(series.flatMap(s => s.points.map(p => p.date)))].sort();
+  const all = series.flatMap(s => s.points.map(p => p.price));
+  let lo = Math.min(...all), hi = Math.max(...all);
+  const pad = (hi - lo) * 0.12 || hi * 0.05; lo = Math.max(0, lo - pad); hi += pad;
+  const x = d => m.l + (dates.length === 1 ? iw / 2 : dates.indexOf(d) / (dates.length - 1) * iw);
+  const y = v => m.t + ih - (v - lo) / (hi - lo) * ih;
+  let g = "";
+  const ticks = 3;
+  for (let i = 0; i <= ticks; i++) {
+    const v = lo + (hi - lo) * i / ticks, yy = y(v);
+    g += `<line x1="${m.l}" x2="${m.l + iw}" y1="${yy}" y2="${yy}" stroke="var(--grid)" stroke-width="1"/>`;
+    g += `<text x="${m.l - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmtEur(v)}</text>`;
+  }
+  // x ticks: every Nth date + the last; drop any tick that would crowd the last
+  const step = Math.max(1, Math.ceil(dates.length / 8));
+  const tickIdx = dates.map((_, i) => i).filter(i => i % step === 0);
+  const lastIdx = dates.length - 1;
+  if (!tickIdx.includes(lastIdx)) tickIdx.push(lastIdx);
+  const kept = tickIdx.filter(i => i === lastIdx || x(dates[lastIdx]) - x(dates[i]) > 42);
+  kept.forEach(i => {
+    g += `<text x="${x(dates[i])}" y="${H - 8}" text-anchor="middle" font-size="11" fill="var(--muted)">${dates[i].slice(5)}</text>`;
+  });
+  g += `<line x1="${m.l}" x2="${m.l + iw}" y1="${m.t + ih}" y2="${m.t + ih}" stroke="var(--baseline)" stroke-width="1"/>`;
+  // end labels: compute positions first, then push apart if they collide
+  const ends = series.map(s => {
+    const last = s.points[s.points.length - 1];
+    return { s, last, ly: y(last.price) };
+  }).sort((a, b) => a.ly - b.ly);
+  for (let i = 1; i < ends.length; i++) {
+    if (ends[i].ly - ends[i - 1].ly < 15) ends[i].ly = ends[i - 1].ly + 15;
+  }
+  series.forEach(s => {
+    const color = `var(${SERIES_VARS[s.color_slot]})`;
+    const pts = s.points.map(p => `${x(p.date)},${y(p.price)}`).join(" ");
+    g += `<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  });
+  ends.forEach(e => {
+    const color = `var(${SERIES_VARS[e.s.color_slot]})`;
+    g += `<circle cx="${x(e.last.date)}" cy="${y(e.last.price)}" r="3.5" fill="${color}" stroke="var(--surface-1)" stroke-width="2"/>`;
+    g += `<text x="${m.l + iw + 8}" y="${e.ly + 4}" font-size="11.5" fill="var(--text-secondary)">${e.s.short} ${fmtEur(e.last.price)}</text>`;
+  });
+  g += `<line class="xhair" y1="${m.t}" y2="${m.t + ih}" stroke="var(--baseline)" stroke-width="1" style="display:none"/>`;
+  g += `<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" class="hover-pane"/>`;
+  svg.innerHTML = g;
+
+  document.getElementById(prefix + "-legend").innerHTML =
+    series.length < 2 ? "" : series.map(s =>
+      `<span><span class="dot" style="background:var(${SERIES_VARS[s.color_slot]})"></span>${s.label}</span>`).join("");
+
+  const tip = document.getElementById(prefix + "-tip");
+  const box = document.getElementById(prefix + "-box");
+  const xh = svg.querySelector(".xhair");
+  svg.querySelector(".hover-pane").addEventListener("mousemove", ev => {
+    const r = svg.getBoundingClientRect();
+    const mx = (ev.clientX - r.left) * (W / r.width);
+    let best = 0, bd = 1e9;
+    dates.forEach((d, i) => { const dd = Math.abs(x(d) - mx); if (dd < bd) { bd = dd; best = i; } });
+    const d = dates[best];
+    xh.style.display = ""; xh.setAttribute("x1", x(d)); xh.setAttribute("x2", x(d));
+    tip.style.display = "block";
+    tip.innerHTML = `<div class="t-date">${d}</div>` + series.map(s => {
+      const p = s.points.find(p => p.date === d);
+      return p ? `<div class="t-row"><span><span class="dot" style="background:var(${SERIES_VARS[s.color_slot]});width:8px;height:8px;display:inline-block;border-radius:50%;margin-right:5px"></span>${s.short}</span><b>${fmtEur(p.price)}</b></div>` : "";
+    }).join("");
+    const bx = box.getBoundingClientRect();
+    let left = ev.clientX - bx.left + 14;
+    if (left + 170 > bx.width) left = ev.clientX - bx.left - 184;
+    tip.style.left = left + "px";
+    tip.style.top = (ev.clientY - bx.top - 10) + "px";
+  });
+  svg.addEventListener("mouseleave", () => { tip.style.display = "none"; xh.style.display = "none"; });
+}
+
+renderLinePanel("eco", DATA.series.filter(s => s.cabin === "ECONOMY"), 240);
+renderLinePanel("biz", DATA.series.filter(s => s.cabin === "BUSINESS"), 190);
+
+(function lineTable() {
+  const series = DATA.series.filter(s => s.points.length);
+  const dates = [...new Set(series.flatMap(s => s.points.map(p => p.date)))].sort();
+  const tbl = document.getElementById("line-table");
+  if (!series.length) { tbl.outerHTML = '<div class="empty">No history yet.</div>'; return; }
+  tbl.innerHTML = "<tr><th>Date</th>" + series.map(s => `<th>${s.short} (€)</th>`).join("") + "</tr>" +
+    dates.map(d => "<tr><td>" + d + "</td>" + series.map(s => {
+      const p = s.points.find(p => p.date === d);
+      return `<td>${p ? Math.round(p.price) : "–"}</td>`;
+    }).join("") + "</tr>").join("");
+})();
+
+/* ---------- date-grid heatmap ---------- */
+(function matrix() {
+  const tabs = document.getElementById("matrix-tabs");
+  const holder = document.getElementById("matrix-holder");
+  const tip = document.getElementById("matrix-tip");
+  const ramp = ["--seq-100","--seq-200","--seq-300","--seq-400","--seq-500","--seq-600","--seq-700"];
+  const withGrid = DATA.watches.map((w, i) => ({ w, i })).filter(o => o.w.matrix && o.w.matrix.cells.length);
+  if (!withGrid.length) { holder.innerHTML = '<div class="empty">No grid data yet.</div>'; return; }
+  withGrid.forEach((o, k) => {
+    const b = document.createElement("button");
+    b.textContent = o.w.name; b.type = "button";
+    b.onclick = () => { tabs.querySelectorAll("button").forEach(x => x.classList.remove("active")); b.classList.add("active"); render(o.w); };
+    if (k === 0) b.classList.add("active");
+    tabs.appendChild(b);
+  });
+  function render(w) {
+    const M = w.matrix;
+    const prices = M.cells.map(c => c.price);
+    const lo = Math.min(...prices), hi = Math.max(...prices);
+    const get = (dep, ret) => M.cells.find(c => c.depart === dep && c.ret === ret);
+    let html = '<table class="matrix"><tr><th>ret \\ dep</th>' +
+      M.departs.map(d => `<th>${d.slice(5)}</th>`).join("") + "</tr>";
+    M.returns.forEach(rt => {
+      html += `<tr><th>${rt.slice(5)}</th>`;
+      M.departs.forEach(dp => {
+        const c = get(dp, rt);
+        if (!c) { html += "<td></td>"; return; }
+        const t = hi === lo ? 0 : (c.price - lo) / (hi - lo);
+        const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
+        const dark = idx >= 3;
+        const isBest = c.price === lo;
+        html += `<td class="${isBest ? "best" : ""}" data-dep="${dp}" data-ret="${rt}" data-p="${c.price}" data-a="${c.airline || ""}"
+          style="background:var(${ramp[idx]});color:${dark ? "#fff" : "#0b0b0b"}">${isBest ? fmtEur(c.price) : ""}</td>`;
+      });
+      html += "</tr>";
+    });
+    html += "</table>";
+    holder.innerHTML = html;
+    holder.querySelectorAll("td[data-p]").forEach(td => {
+      td.addEventListener("mousemove", ev => {
+        tip.style.display = "block";
+        tip.innerHTML = `<div class="t-date">${td.dataset.dep} → ${td.dataset.ret}</div>
+          <div class="t-row"><span>${td.dataset.a || "best offer"}</span><b>${fmtEur(+td.dataset.p)}</b></div>`;
+        const bx = holder.parentElement.getBoundingClientRect();
+        tip.style.left = Math.min(ev.clientX - bx.left + 12, bx.width - 180) + "px";
+        tip.style.top = (ev.clientY - bx.top + 14) + "px";
+      });
+      td.addEventListener("mouseleave", () => tip.style.display = "none");
+    });
+  }
+  render(withGrid[0].w);
+})();
+
+/* ---------- deals ---------- */
+(function deals() {
+  const holder = document.getElementById("deals-holder");
+  if (!DATA.deals.length) {
+    holder.innerHTML = '<div class="empty">No deals detected yet — alerts start once ≥5 days of price history exist for a route.</div>';
+    return;
+  }
+  holder.innerHTML = '<table class="flat"><tr><th>Detected</th><th>Route</th><th>Cabin</th><th>Dates</th><th>Price</th><th>vs median</th><th></th></tr>' +
+    DATA.deals.map(d => `<tr>
+      <td>${d.detected_at}</td>
+      <td>${d.origin} → ${d.destination}</td>
+      <td><span class="pill">${d.cabin.toLowerCase()}</span></td>
+      <td>${d.depart_date} → ${d.return_date}</td>
+      <td><b>${fmtEur(d.price_eur)}</b></td>
+      <td style="color:var(--delta-good)">▼ ${d.pct_below_median}%</td>
+      <td><a href="${d.deep_link}" target="_blank" rel="noopener">book →</a></td>
+    </tr>`).join("") + "</table>";
+})();
+
+/* ---------- manual search ---------- */
+document.getElementById("search-form").addEventListener("submit", ev => {
+  ev.preventDefault();
+  const f = new FormData(ev.target);
+  const cabin = f.get("cabin") ? "%20" + f.get("cabin") + "%20class" : "";
+  window.open(`https://www.google.com/travel/flights?q=Flights%20from%20${f.get("o")}%20to%20${f.get("d")}%20on%20${f.get("dep")}%20through%20${f.get("ret")}${cabin}&curr=EUR`, "_blank");
+});
+</script>
+</body>
+</html>
