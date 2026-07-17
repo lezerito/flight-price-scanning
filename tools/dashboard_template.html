@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flight Price Scanner — NYC ⇄ Japan</title>
+<title>Flight Price Scanner</title>
 <style>
   :root {
     color-scheme: light;
@@ -106,7 +106,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>✈️ Flight Price Scanner — NYC ⇄ Japan</h1>
+  <h1>✈️ Flight Price Scanner — NYC ⇄ Japan · PAR → NYC</h1>
   <div class="sub" id="generated"></div>
 
   <div class="tiles" id="tiles"></div>
@@ -132,6 +132,14 @@
       <div class="chartbox" id="ret-box">
         <svg id="ret-chart" width="980" height="220" role="img" aria-label="Daily best return price per route"></svg>
         <div class="tooltip" id="ret-tip"></div>
+      </div>
+    </div>
+    <div id="panel-par" style="margin-top:14px">
+      <h3 class="panel-title">Paris → New York — Aug 25 – Sep 3, 2026</h3>
+      <div class="legend" id="par-legend"></div>
+      <div class="chartbox" id="par-box">
+        <svg id="par-chart" width="980" height="200" role="img" aria-label="Daily best Paris to New York price"></svg>
+        <div class="tooltip" id="par-tip"></div>
       </div>
     </div>
     <details style="margin-top:8px"><summary>View as table</summary>
@@ -193,7 +201,7 @@ document.getElementById("generated").textContent =
   DATA.watches.forEach((w, i) => {
     const el = document.createElement("div");
     el.className = "tile";
-    if (!w.best) { el.innerHTML = `<div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div><div class="empty">no cached fare yet for ${w.month}</div>`; holder.appendChild(el); return; }
+    if (!w.best) { el.innerHTML = `<div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div><div class="empty">no cached fare yet for ${w.months.join(", ")}</div>`; holder.appendChild(el); return; }
     let delta = "";
     if (w.median != null) {
       const pct = ((w.best.price - w.median) / w.median * 100);
@@ -306,6 +314,7 @@ function renderLinePanel(prefix, series, H) {
 
 renderLinePanel("out", DATA.series.filter(s => s.panel === "out"), 220);
 renderLinePanel("ret", DATA.series.filter(s => s.panel === "ret"), 220);
+renderLinePanel("par", DATA.series.filter(s => s.panel === "par"), 200);
 
 (function lineTable() {
   const series = DATA.series.filter(s => s.points.length);
@@ -335,31 +344,36 @@ renderLinePanel("ret", DATA.series.filter(s => s.panel === "ret"), 220);
     tabs.appendChild(b);
   });
   function render(w) {
-    // full month grid: 7 columns (Mon-Sun), one row per week
-    const [yy, mm] = w.month.split("-").map(Number);
+    // one weekday grid (Mon-Sun columns) per month the watch spans;
+    // color scale shared across the whole watch
     const byDate = Object.fromEntries(w.calendar.map(c => [c.date, c]));
     const prices = w.calendar.map(c => c.price);
     const lo = Math.min(...prices), hi = Math.max(...prices);
-    const daysInMonth = new Date(yy, mm, 0).getDate();
-    const firstDow = (new Date(yy, mm - 1, 1).getDay() + 6) % 7; // Mon=0
-    let html = '<table class="matrix"><tr>' +
-      ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<th>${d}</th>`).join("") + "</tr><tr>";
-    for (let i = 0; i < firstDow; i++) html += "<td></td>";
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${w.month}-${String(day).padStart(2, "0")}`;
-      const c = byDate[date];
-      if (c) {
-        const t = hi === lo ? 0 : (c.price - lo) / (hi - lo);
-        const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
-        const isBest = c.price === lo;
-        html += `<td class="${isBest ? "best" : ""}" data-d="${date}" data-p="${c.price}" data-a="${c.airline || ""}"
-          style="background:var(${ramp[idx]});color:${idx >= 3 ? "#fff" : "#0b0b0b"}">${day}${isBest ? "<br>" + fmtEur(c.price) : ""}</td>`;
-      } else {
-        html += `<td style="color:var(--muted)">${day}</td>`;
+    let html = "";
+    w.months.forEach(month => {
+      const [yy, mm] = month.split("-").map(Number);
+      const daysInMonth = new Date(yy, mm, 0).getDate();
+      const firstDow = (new Date(yy, mm - 1, 1).getDay() + 6) % 7; // Mon=0
+      html += `<div style="font-size:12px;color:var(--muted);margin:8px 0 4px">${month}</div>`;
+      html += '<table class="matrix"><tr>' +
+        ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<th>${d}</th>`).join("") + "</tr><tr>";
+      for (let i = 0; i < firstDow; i++) html += "<td></td>";
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = `${month}-${String(day).padStart(2, "0")}`;
+        const c = byDate[date];
+        if (c) {
+          const t = hi === lo ? 0 : (c.price - lo) / (hi - lo);
+          const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
+          const isBest = c.price === lo;
+          html += `<td class="${isBest ? "best" : ""}" data-d="${date}" data-p="${c.price}" data-a="${c.airline || ""}"
+            style="background:var(${ramp[idx]});color:${idx >= 3 ? "#fff" : "#0b0b0b"}">${day}${isBest ? "<br>" + fmtEur(c.price) : ""}</td>`;
+        } else {
+          html += `<td style="color:var(--muted)">${day}</td>`;
+        }
+        if ((firstDow + day) % 7 === 0 && day !== daysInMonth) html += "</tr><tr>";
       }
-      if ((firstDow + day) % 7 === 0 && day !== daysInMonth) html += "</tr><tr>";
-    }
-    html += "</tr></table>";
+      html += "</tr></table>";
+    });
     holder.innerHTML = html;
     holder.querySelectorAll("td[data-p]").forEach(td => {
       td.addEventListener("mousemove", ev => {

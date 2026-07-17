@@ -14,7 +14,8 @@ OUT = os.path.join(ROOT, "docs", "index.html")
 CONFIG_PATH = os.path.join(ROOT, "config.json")
 
 SHORT = {("NYC", "TYO"): "→ TYO", ("NYC", "OSA"): "→ OSA",
-         ("TYO", "NYC"): "TYO →", ("OSA", "NYC"): "OSA →"}
+         ("TYO", "NYC"): "TYO →", ("OSA", "NYC"): "OSA →",
+         ("PAR", "NYC"): "PAR → NYC"}
 
 
 def build_data(conn, cfg):
@@ -52,7 +53,8 @@ def build_data(conn, cfg):
             (*key, last_day)).fetchall()
         watches.append({
             "name": w["name"], "origin": w["origin"],
-            "destination": w["destination"], "month": w["month"],
+            "destination": w["destination"],
+            "months": w.get("months") or [w["month"]],
             "median": median,
             "best": {"price": best["price_eur"], "depart": best["depart_date"],
                      "airline": best["airline"],

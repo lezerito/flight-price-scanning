@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Flight Price Scanner — NYC ⇄ Japan</title>
+<title>Flight Price Scanner</title>
 <style>
   :root {
     color-scheme: light;
@@ -106,7 +106,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>✈️ Flight Price Scanner — NYC ⇄ Japan</h1>
+  <h1>✈️ Flight Price Scanner — NYC ⇄ Japan · PAR → NYC</h1>
   <div class="sub" id="generated"></div>
 
   <div class="tiles" id="tiles"></div>
@@ -132,6 +132,14 @@
       <div class="chartbox" id="ret-box">
         <svg id="ret-chart" width="980" height="220" role="img" aria-label="Daily best return price per route"></svg>
         <div class="tooltip" id="ret-tip"></div>
+      </div>
+    </div>
+    <div id="panel-par" style="margin-top:14px">
+      <h3 class="panel-title">Paris → New York — Aug 25 – Sep 3, 2026</h3>
+      <div class="legend" id="par-legend"></div>
+      <div class="chartbox" id="par-box">
+        <svg id="par-chart" width="980" height="200" role="img" aria-label="Daily best Paris to New York price"></svg>
+        <div class="tooltip" id="par-tip"></div>
       </div>
     </div>
     <details style="margin-top:8px"><summary>View as table</summary>
@@ -177,7 +185,7 @@
 </div>
 
 <script>
-const DATA = {"generated_at": "2026-07-18", "n_observations": 6, "first_observation": "2026-07-17", "watches": [{"name": "Outbound NYC -> Tokyo", "origin": "NYC", "destination": "TYO", "month": "2026-09", "median": null, "best": {"price": 534.0, "depart": "2026-09-23", "airline": "AS", "airports": "EWR\u2192NRT", "link": "https://www.aviasales.com/search/NYC2309TYO1?t=NH17901829201790349900002003EWRSANSJCSFONRT_9cf286c6c7805aa2c01da040ba4f9897_47783&search_date=15072026&expected_price_uuid=019f6615-cb51-8010-a982-02bf22c308bf&static_fare_key=TY%7CP0%7CH0%7CL0%7CCH0%7CR0%7CTBC0&itinerary_key=Q6g6xFSuq3DpbOleLQ2NSA&expected_price_source=share&expected_price_currency=eur&expected_price=534"}, "calendar": [{"date": "2026-09-23", "price": 534.0, "airline": "AS"}, {"date": "2026-09-26", "price": 604.0, "airline": "AS"}]}, {"name": "Outbound NYC -> Osaka", "origin": "NYC", "destination": "OSA", "month": "2026-09", "median": null, "best": null, "calendar": []}, {"name": "Return Tokyo -> NYC", "origin": "TYO", "destination": "NYC", "month": "2027-03", "median": null, "best": null, "calendar": []}, {"name": "Return Osaka -> NYC", "origin": "OSA", "destination": "NYC", "month": "2027-03", "median": null, "best": null, "calendar": []}], "series": [{"label": "Outbound NYC -> Tokyo", "short": "\u2192 TYO", "panel": "out", "color_slot": 0, "points": [{"date": "2026-07-17", "price": 534.0}, {"date": "2026-07-18", "price": 534.0}]}, {"label": "Outbound NYC -> Osaka", "short": "\u2192 OSA", "panel": "out", "color_slot": 1, "points": []}, {"label": "Return Tokyo -> NYC", "short": "TYO \u2192", "panel": "ret", "color_slot": 2, "points": []}, {"label": "Return Osaka -> NYC", "short": "OSA \u2192", "panel": "ret", "color_slot": 3, "points": []}], "trips": [], "deals": []};
+const DATA = {"generated_at": "2026-07-18", "n_observations": 16, "first_observation": "2026-07-17", "watches": [{"name": "Outbound NYC -> Tokyo", "origin": "NYC", "destination": "TYO", "months": ["2026-09"], "median": null, "best": {"price": 534.0, "depart": "2026-09-23", "airline": "AS", "airports": "EWR\u2192NRT", "link": "https://www.aviasales.com/search/NYC2309TYO1?t=NH17901829201790349900002003EWRSANSJCSFONRT_9cf286c6c7805aa2c01da040ba4f9897_47783&search_date=15072026&expected_price_uuid=019f6615-cb51-8010-a982-02bf22c308bf&static_fare_key=TY%7CP0%7CH0%7CL0%7CCH0%7CR0%7CTBC0&itinerary_key=Q6g6xFSuq3DpbOleLQ2NSA&expected_price_source=share&expected_price_currency=eur&expected_price=534"}, "calendar": [{"date": "2026-09-23", "price": 534.0, "airline": "AS"}, {"date": "2026-09-26", "price": 604.0, "airline": "AS"}]}, {"name": "Outbound NYC -> Osaka", "origin": "NYC", "destination": "OSA", "months": ["2026-09"], "median": null, "best": null, "calendar": []}, {"name": "Return Tokyo -> NYC", "origin": "TYO", "destination": "NYC", "months": ["2027-03"], "median": null, "best": null, "calendar": []}, {"name": "Return Osaka -> NYC", "origin": "OSA", "destination": "NYC", "months": ["2027-03"], "median": null, "best": null, "calendar": []}, {"name": "Paris -> New York", "origin": "PAR", "destination": "NYC", "months": ["2026-08", "2026-09"], "median": null, "best": {"price": 292.0, "depart": "2026-09-01", "airline": "FR", "airports": "BVA\u2192JFK", "link": "https://www.aviasales.com/search/PAR0109NYC1?t=B617882442001788271560000816BVADUBJFK_fb7fe50b270dd4863308dd4d3c1c2594_25863&search_date=16072026&expected_price_uuid=019f694b-6aa7-8030-e2c8-5ad7f60c376c&static_fare_key=TY%7CP0%7CH0%7CL0%7CCH0%7CR0%7CTBC0&itinerary_key=P2HAGNwDLZcIIUlQ_6Cv_w&expected_price_source=share&expected_price_currency=eur&expected_price=292"}, "calendar": [{"date": "2026-08-25", "price": 396.0, "airline": "BF"}, {"date": "2026-08-26", "price": 298.0, "airline": "FR"}, {"date": "2026-08-27", "price": 343.0, "airline": "BF"}, {"date": "2026-08-28", "price": 335.0, "airline": "BF"}, {"date": "2026-08-29", "price": 346.0, "airline": "IB"}, {"date": "2026-09-01", "price": 292.0, "airline": "FR"}, {"date": "2026-09-02", "price": 339.0, "airline": "AA"}, {"date": "2026-09-03", "price": 322.0, "airline": "BF"}]}], "series": [{"label": "Outbound NYC -> Tokyo", "short": "\u2192 TYO", "panel": "out", "color_slot": 0, "points": [{"date": "2026-07-17", "price": 534.0}, {"date": "2026-07-18", "price": 534.0}]}, {"label": "Outbound NYC -> Osaka", "short": "\u2192 OSA", "panel": "out", "color_slot": 1, "points": []}, {"label": "Return Tokyo -> NYC", "short": "TYO \u2192", "panel": "ret", "color_slot": 2, "points": []}, {"label": "Return Osaka -> NYC", "short": "OSA \u2192", "panel": "ret", "color_slot": 3, "points": []}, {"label": "Paris -> New York", "short": "PAR \u2192 NYC", "panel": "par", "color_slot": 0, "points": [{"date": "2026-07-18", "price": 292.0}]}], "trips": [], "deals": []};
 
 const fmtEur = v => "€" + Math.round(v).toLocaleString("en-US");
 const SERIES_VARS = ["--series-1", "--series-2", "--series-3", "--series-4"];
@@ -193,7 +201,7 @@ document.getElementById("generated").textContent =
   DATA.watches.forEach((w, i) => {
     const el = document.createElement("div");
     el.className = "tile";
-    if (!w.best) { el.innerHTML = `<div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div><div class="empty">no cached fare yet for ${w.month}</div>`; holder.appendChild(el); return; }
+    if (!w.best) { el.innerHTML = `<div class="label"><span class="dot" style="background:var(${SERIES_VARS[i % 4]})"></span>${w.name}</div><div class="empty">no cached fare yet for ${w.months.join(", ")}</div>`; holder.appendChild(el); return; }
     let delta = "";
     if (w.median != null) {
       const pct = ((w.best.price - w.median) / w.median * 100);
@@ -306,6 +314,7 @@ function renderLinePanel(prefix, series, H) {
 
 renderLinePanel("out", DATA.series.filter(s => s.panel === "out"), 220);
 renderLinePanel("ret", DATA.series.filter(s => s.panel === "ret"), 220);
+renderLinePanel("par", DATA.series.filter(s => s.panel === "par"), 200);
 
 (function lineTable() {
   const series = DATA.series.filter(s => s.points.length);
@@ -335,31 +344,36 @@ renderLinePanel("ret", DATA.series.filter(s => s.panel === "ret"), 220);
     tabs.appendChild(b);
   });
   function render(w) {
-    // full month grid: 7 columns (Mon-Sun), one row per week
-    const [yy, mm] = w.month.split("-").map(Number);
+    // one weekday grid (Mon-Sun columns) per month the watch spans;
+    // color scale shared across the whole watch
     const byDate = Object.fromEntries(w.calendar.map(c => [c.date, c]));
     const prices = w.calendar.map(c => c.price);
     const lo = Math.min(...prices), hi = Math.max(...prices);
-    const daysInMonth = new Date(yy, mm, 0).getDate();
-    const firstDow = (new Date(yy, mm - 1, 1).getDay() + 6) % 7; // Mon=0
-    let html = '<table class="matrix"><tr>' +
-      ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<th>${d}</th>`).join("") + "</tr><tr>";
-    for (let i = 0; i < firstDow; i++) html += "<td></td>";
-    for (let day = 1; day <= daysInMonth; day++) {
-      const date = `${w.month}-${String(day).padStart(2, "0")}`;
-      const c = byDate[date];
-      if (c) {
-        const t = hi === lo ? 0 : (c.price - lo) / (hi - lo);
-        const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
-        const isBest = c.price === lo;
-        html += `<td class="${isBest ? "best" : ""}" data-d="${date}" data-p="${c.price}" data-a="${c.airline || ""}"
-          style="background:var(${ramp[idx]});color:${idx >= 3 ? "#fff" : "#0b0b0b"}">${day}${isBest ? "<br>" + fmtEur(c.price) : ""}</td>`;
-      } else {
-        html += `<td style="color:var(--muted)">${day}</td>`;
+    let html = "";
+    w.months.forEach(month => {
+      const [yy, mm] = month.split("-").map(Number);
+      const daysInMonth = new Date(yy, mm, 0).getDate();
+      const firstDow = (new Date(yy, mm - 1, 1).getDay() + 6) % 7; // Mon=0
+      html += `<div style="font-size:12px;color:var(--muted);margin:8px 0 4px">${month}</div>`;
+      html += '<table class="matrix"><tr>' +
+        ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"].map(d => `<th>${d}</th>`).join("") + "</tr><tr>";
+      for (let i = 0; i < firstDow; i++) html += "<td></td>";
+      for (let day = 1; day <= daysInMonth; day++) {
+        const date = `${month}-${String(day).padStart(2, "0")}`;
+        const c = byDate[date];
+        if (c) {
+          const t = hi === lo ? 0 : (c.price - lo) / (hi - lo);
+          const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
+          const isBest = c.price === lo;
+          html += `<td class="${isBest ? "best" : ""}" data-d="${date}" data-p="${c.price}" data-a="${c.airline || ""}"
+            style="background:var(${ramp[idx]});color:${idx >= 3 ? "#fff" : "#0b0b0b"}">${day}${isBest ? "<br>" + fmtEur(c.price) : ""}</td>`;
+        } else {
+          html += `<td style="color:var(--muted)">${day}</td>`;
+        }
+        if ((firstDow + day) % 7 === 0 && day !== daysInMonth) html += "</tr><tr>";
       }
-      if ((firstDow + day) % 7 === 0 && day !== daysInMonth) html += "</tr><tr>";
-    }
-    html += "</tr></table>";
+      html += "</tr></table>";
+    });
     holder.innerHTML = html;
     holder.querySelectorAll("td[data-p]").forEach(td => {
       td.addEventListener("mousemove", ev => {

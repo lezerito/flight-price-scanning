@@ -3,6 +3,17 @@
 One entry per date, newest first. Append an entry for every session that
 changes code, config, data handling, or project status.
 
+## 2026-07-18 (night, 3) — Paris → New York added as 5th watch
+
+- One-off search PAR→NYC one-way Aug 25 – Sep 3 found €292–€396 (cheapest
+  Sep 1 BVA→JFK self-transfer; best direct €322 Sep 3 ORY→EWR French Bee).
+  User asked to track it permanently.
+- Watch schema extended: `months` (list, for windows spanning months) and
+  `depart_to` (upper day bound) alongside `depart_from`. Calendar view now
+  renders one weekday grid per month spanned.
+- Dashboard: third chart panel (PAR→NYC), title updated. First scan
+  recorded 8 fare-days for the window.
+
 ## 2026-07-18 (night, 2) — outbound window narrowed to Sep 21–30
 
 - User decision: departure must be **after Sep 20**. Added `depart_from:

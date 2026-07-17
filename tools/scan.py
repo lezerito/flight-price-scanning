@@ -49,18 +49,21 @@ def scan_travelpayouts(conn, cfg, today):
     import travelpayouts_client
     n = 0
     for watch in cfg["watches"]:
-        try:
-            rows = travelpayouts_client.one_way_prices(
-                watch["origin"], watch["destination"], watch["month"],
-                currency=cfg["currency"])
-        except Exception as e:  # keep scanning other watches
-            print(f"  travelpayouts error {watch['name']}: {e}")
-            continue
+        rows = []
+        for month in watch.get("months") or [watch["month"]]:
+            try:
+                rows += travelpayouts_client.one_way_prices(
+                    watch["origin"], watch["destination"], month,
+                    currency=cfg["currency"])
+            except Exception as e:  # keep scanning other watches/months
+                print(f"  travelpayouts error {watch['name']} {month}: {e}")
         for r in rows:
             if not r["depart_date"]:
                 continue
             # API only takes whole months; enforce day-level window here.
             if watch.get("depart_from") and r["depart_date"] < watch["depart_from"]:
+                continue
+            if watch.get("depart_to") and r["depart_date"] > watch["depart_to"]:
                 continue
             db.insert_observation(conn, {
                 "observed_at": today, "source": "travelpayouts",

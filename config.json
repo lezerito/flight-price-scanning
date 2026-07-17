@@ -54,6 +54,24 @@
         "end": "2027-03-31",
         "step_days": 2
       }
+    },
+    {
+      "name": "Paris -> New York",
+      "origin": "PAR",
+      "destination": "NYC",
+      "cabin": "ECONOMY",
+      "months": [
+        "2026-08",
+        "2026-09"
+      ],
+      "depart_from": "2026-08-25",
+      "depart_to": "2026-09-03",
+      "panel": "par",
+      "mock_window": {
+        "start": "2026-08-25",
+        "end": "2026-09-03",
+        "step_days": 1
+      }
     }
   ],
   "trip_pairs": [
